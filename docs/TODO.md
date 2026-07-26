@@ -13,6 +13,8 @@ Legend: `[ ]` todo · `[~]` in progress · `[x]` done.
 - [ ] Copy this docs set (PRD, PRD/, PLAN, TODO, GAP_ANALYSIS) into both repos (mandatory content, rule #50)
 - [ ] Choose 8-char group code (no spaces) with partner; record here: `________`
 - [ ] Skim reference repo `docs/STRATEGY.md` + sample artifacts; extract interop contract notes
+- [ ] Obtain the course-intro file "Recommendations for writing & submitting software with AI agents" and audit our repos against it (it is the stated grading rubric)
+- [ ] Start the README **interpretation log** (academic-freedom decisions: first mover = thief; capture-claim query semantics; + anything found later)
 
 ## 1. Stage 1 — Base logic (PRD-1)
 - [ ] `domain/board.py` — grid, coordinates, occupancy (config-driven size ≥7×7)
@@ -72,7 +74,7 @@ Legend: `[ ]` todo · `[~]` in progress · `[x]` done.
 - [ ] Protocol wiring: COMMIT (hash only) → ACK → REVEAL (nonce withheld) → VERIFYING (legality + consistency)
 - [ ] `domain/audit.py` — final nonce exchange, full-log re-hash, `Verified OK` / `TAMPERED` verdict (#19)
 - [ ] Capture-claim truthful-answer path; sealed barrier declarations (#15–16, #21–22)
-- [ ] `domain/declarations.py` — step-0: hardware (OS/CPU/RAM/GPU), LLM model, code version, **git commit hash**, game number → `declaration_<game_id>.json`, signed, exchanged (#24, #53)
+- [ ] `domain/declarations.py` — step-0 `declaration_<game_id>.json`: both teams + members, 4 repo URLs, both MCP URLs, hardware (OS/CPU/RAM/GPU), LLM model, agreed token cap, code version, **git commit hash** (→ `github_commit` in result), game number, start/end times — signed, exchanged (#24, #53)
 - [ ] Constitution + scent-model cryptographic lock exchange (#23)
 - [ ] Adversarial cheat-harness (each tamper class must be caught) 
 - [ ] Full remote series with clean mutual audit · **GATE M6 demo recorded**

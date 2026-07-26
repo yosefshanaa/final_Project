@@ -11,7 +11,8 @@ model, brains v2 operating on belief views, token metering.
 
 ## Functional requirements
 1. **Scent engine (fixed params):** per move/stay emit a 5×5 radial field, center τ=0.9; after each
-   full turn decay all cells: `τ(t+1)=max(0,(1−ρ)·τ(t)+Δτ)`, ρ=0.10. Symmetric: each peer
+   full turn decay all cells: `τ(t+1)=max(0,(1−ρ)·τ(t)+Δτ)`, ρ=0.10; values continuous in
+   **[0, 0.9]**. Symmetric: each peer
    maintains its own emission field and serves it to the opponent; each peer reads **only the
    opponent's** field. The model + a numeric example (0.9 → 0.81 after one decay) is exported as a
    canonical document for the pre-series cryptographic lock (#23) and our engine code may be

@@ -161,14 +161,20 @@ for the academic README).
 6. Analytics notebook: token/cost model per provider, win-rate parameter sweeps (echoes the
    reference `RESEARCH-REPORT-Performance-Analysis.md` — the book explicitly recommends replicating
    that analysis for our own plan).
+7. A2A-style task-lifecycle states (`submitted`/`working`/`completed`) layered over match
+   management, per the book's "highly recommended" pointer to the A2A/ACP protocols (MCP remains
+   the mandated wire protocol — this is bookkeeping semantics only).
 
 ## 6. League operations
 
 1. **Warm-ups first** (uncounted, declared as such): interop check vs reference-derived peers —
    tool contract, artifact schemas, scent-lock exchange.
-2. Per counted match: negotiate constitution → lock config + scent model (SHA-256) → step-0
-   declarations (incl. our current commit hash) → play 6 sub-games → mutual audit → agree result →
-   **both sides email reports** → commit the per-match config + artifacts to the repos.
+2. Per counted match: negotiate constitution (**incl. first mover** — book leaves it open; we
+   propose thief-first — and any mutually agreed rule upgrades, which the book encourages) →
+   lock config + scent model (SHA-256) → step-0 declarations (incl. our current commit hash) →
+   play 6 sub-games → mutual audit → agree result → **both sides email reports** → commit the
+   per-match config + artifacts to the repos → record any interpretation decisions in the README
+   interpretation log (academic-freedom clause).
 3. Truthful counted-game declaration before each match; stop at one counted game per opponent;
    target 2–3 counted matches vs different teams (pass gate = 2), hard cap 10.
 4. Evidence kit per match: GUI screenshots, replay `Verified OK` screenshot, terminal output,

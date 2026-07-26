@@ -23,10 +23,12 @@ declaration, config & scent-model locks, capture-claim honesty path, tamper forf
 3. **Capture Claim / win claims:** police's claim triggers the thief's cryptographically bound
    truthful answer (#21–22); the answer rides a sealed record, so a lie is provably caught at audit.
    Same discipline for survival claims and barrier declarations (#15–16).
-4. **Step-0 declaration (#24, #53):** collect OS, CPU cores/freq, RAM, GPU/VRAM, LLM model, code
-   version, team name, game number, **git commit hash being played**; serialize to
-   `declaration_<game_id>.json`, hash-sign, exchange before move 1. Token consumption meter sealed
-   into the result (#54).
+4. **Step-0 declaration (#24, #53):** build `declaration_<game_id>.json` fixing everything
+   constant for the match: both teams' identities + members, all four repo URLs, both MCP server
+   addresses, per-side hardware (OS, CPU cores/freq, RAM, GPU/VRAM), LLM model, the **agreed token
+   cap**, code version, game number, **git commit hash being played** (also emitted later as
+   `github_commit` in the result JSON), and game start/end times; hash-sign and exchange before
+   move 1. Token consumption meter sealed into the result (#54).
 5. **Constitution & scent-model lock (#11, #23):** pre-series exchange of `config_sha256` and the
    scent-model document hash (formula + numeric example); mismatch ⇒ refuse to play.
 6. **Audit engine as a library:** `verify_step(entry)->OK|TAMPERED`, `audit(log)->verdict` —

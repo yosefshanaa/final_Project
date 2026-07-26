@@ -24,8 +24,12 @@ reserved now), scent/hints (PRD-4).
 5. **State machine** (#4–5): states `WAITING_FOR_OPPONENT, COMPUTING_MOVE, COMMITTING,
    AWAITING_REVEAL, VERIFYING, TECHNICAL_LOSS(terminal)`; transition table enforced; illegal
    transition ⇒ immediate exception (dev) / technical-loss path (play).
-6. **Deadline Tracker** (#6): per-request expiry (`[response timeout]`, default 30 s), bounded
-   retries, then declare technical loss cleanly — a request never waits unbounded.
+6. **Deadline Tracker** (#6): per-request expiry (`response_timeout_sec`, default 30 s), bounded
+   retries, then declare technical loss cleanly — a request never waits unbounded. Distinct from
+   the **turn timeout** (`turn_timeout_seconds`, private TOML, default 180 s): the maximum total
+   wait for the opponent's turn before declaring a technical loss.
+   First mover is not fixed by the book — it is a `handshake` negotiation field (our default
+   proposal: thief first).
 7. **Watchdog** (#7): background heartbeat monitor (`[watchdog threshold]`, default 60 s);
    on freeze: persist state, controlled shutdown (close MCP + logs), exit code distinct from crash.
 8. **Log manager:** every step appended as one JSON record (schema gains crypto fields in PRD-6)

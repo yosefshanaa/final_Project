@@ -23,8 +23,9 @@ reports).
    collected for the README.
 3. **Four artifacts** (common `game_uid`, names from Appendix F §3):
    `declaration_<game_id>.json` (PRD-6), `config_<game_id>_g<NN>.json` (agreed constitution copy),
-   `log_<game_id>_g<NN>.json` (sealed step log), `result_<game_id>.json` (per-sub-game scores +
-   totals, 4 GitHub links, per-sub-game commit hash, token totals). JSON-schema validated.
+   `log_<game_id>_g<NN>.json` (sealed step log — commits, reveals, nonces, **hints and the
+   LLM-discussion fields**), `result_<game_id>.json` (per-sub-game scores + totals, 4 GitHub
+   links, per-sub-game `github_commit` hash, token totals). JSON-schema validated.
 4. **Gmail reporting (#32–35):** after a valid match and explicit result agreement with the
    opponent, our peer **automatically** emails `result_<game_id>.json` (+ artifacts) as a **JSON
    attachment** — never plaintext — to `rmisegal+uoh26finalgame@gmail.com`. Independent of the

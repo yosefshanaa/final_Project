@@ -71,6 +71,9 @@ dev; two different machines in league play.
   is rejected by the *opponent* (each side enforces physics) and costs the game.
 - Turn order and sync are governed by the state machine (§5.4); a "full turn" = both agents moved
   (scent decay ticks after each full turn).
+- **First mover:** the book does not fix which role moves first — it is agreed at handshake.
+  Our default proposal: **thief moves first** (classic pursuit convention). Recorded in the
+  interpretation log (§5.7) as an academic-freedom decision.
 
 ### 4.3 Barriers (police only)
 - In a turn where the police **forgoes movement**, it may place one barrier on its own cell or one
@@ -93,7 +96,8 @@ dev; two different machines in league play.
 
 ### 4.5 Scent / pheromone model (fixed parameters)
 - Each move/stay emits a **5×5** field centered on the agent: center intensity **0.9**, radial falloff.
-- After each full turn every cell decays: `τ(t+1) = max(0, (1−ρ)·τ(t) + Δτ)`, **ρ = 0.10**.
+- After each full turn every cell decays: `τ(t+1) = max(0, (1−ρ)·τ(t) + Δτ)`, **ρ = 0.10**;
+  cell values are continuous in **[0, 0.9]** (never negative, never above the focal intensity).
 - Each side reads **only the opponent's** scent field; scent is natural and unforgeable — the only
   deception channel is the verbal hint.
 - **Before a series, both teams must exchange the emission+decay model with a concrete numeric
@@ -116,10 +120,17 @@ dev; two different machines in league play.
 - Capture Claims and win claims ride this protocol; a false answer is caught at audit.
 
 ### 4.8 Step-0 (pre-game) declaration — mandatory
-Signed JSON containing: OS, CPU cores/frequency, RAM, GPU/VRAM, LLM model name, **code version**,
-**team name**, **game number**, and the **git commit hash actually being played** (code may change
-between matches; each match's commit must be declared, #53). LLM token consumption is metered and
-sealed during play and reported in the result file (#54).
+The `[declaration file]` (`declaration_<game_id>.json`) fixes, cryptographically signed,
+**everything constant for the whole match** (all sub-games):
+- **Both teams' identities and members** (names + IDs);
+- **All four repo URLs** (each team's police + thief repos) and **both MCP server addresses**;
+- Hardware spec per side: OS, CPU cores/frequency, RAM, GPU/VRAM;
+- LLM model name, the **agreed token cap** for the series;
+- **Code version**, **game number**, and the **git commit hash actually being played** (code may
+  change between matches; each match's commit must be declared, #53 — and it also appears as the
+  `github_commit` field in the emailed result JSON);
+- Game **start and end times**.
+LLM token consumption is metered and sealed during play and reported in the result file (#54).
 
 ## 5. System requirements
 
@@ -131,9 +142,11 @@ sealed during play and reported in the result file (#54).
 - **State machine** (mandatory, #4–5): `WAITING_FOR_OPPONENT → COMPUTING_MOVE → COMMITTING →
   AWAITING_REVEAL → VERIFYING → (loop)`; error transitions to terminal `TECHNICAL_LOSS`; illegal
   transitions raise immediately.
-- **Deadline Tracker** on every MCP request (`[response timeout]` 30 s default, negotiable;
-  retries then technical-loss declaration) and a **Watchdog** background heartbeat monitor
-  (`[watchdog threshold]` 60 s default) with controlled shutdown + state persistence (#6–7).
+- **Three distinct timers** (do not conflate): `response_timeout_sec` — per MCP request
+  (30 s default, shared JSON, negotiable; deadline tracker retries then technical loss, #6);
+  `watchdog_timeout_sec` — whole-system heartbeat freeze threshold (60 s default, shared JSON;
+  watchdog persists state + controlled shutdown, #7); `turn_timeout_seconds` — maximum wait for
+  the opponent's *turn* (180 s default, private TOML; a silent opponent past it is a technical loss).
 - **Strategy module is a separate, pluggable component** hooked into the PeerRuntime between hint
   decode and commit pack; selected in private TOML `[strategy]` (`police_class` / `thief_class`,
   `package.module:Class` subclassing `BrainBase`).
@@ -171,9 +184,11 @@ sealed during play and reported in the result file (#54).
   `[agent report address]` = `rmisegal+uoh26finalgame@gmail.com` (#32–35). No report from a side ⇒
   that side gets no points.
 - **Four artifacts** per game, common `game_uid`:
-  `declaration_<game_id>.json`, `config_<game_id>_g<NN>.json`, `log_<game_id>_g<NN>.json`,
-  `result_<game_id>.json`. Result includes both teams' repo links (4 links), per-sub-game commit
-  hash, and total tokens consumed.
+  `declaration_<game_id>.json`, `config_<game_id>_g<NN>.json`, `log_<game_id>_g<NN>.json`
+  (step-by-step sealed records **including the hints and the LLM-discussion fields**, nonces and
+  hashes — the replay viewer's input), `result_<game_id>.json`. The result includes both teams'
+  repo links (4 links), the per-sub-game commit hash (`github_commit` field), and total tokens
+  consumed.
 - **Gatekeeper** in front of Gmail (mandatory): Quota Manager (daily cap), **Token-Bucket rate
   limiter** (`tokens ← min(C, tokens + r·Δt)`, allow iff ≥1; ≥30 req/min, ≥2 concurrent, ≥5 s
   backoff, ≥3 retries, ≥100 queue), **DOS detector** (anomaly ⇒ hard lock). Respect HTTP 429 with
@@ -190,6 +205,17 @@ sealed during play and reported in the result file (#54).
   TDD; English-only code comments; small single-purpose modules; CI on both repos.
 - All tunables from config — nothing hard-coded; deterministic seeds where possible; JSONL/JSON
   logs enable full deterministic replay.
+
+### 5.7 Interpretation & contradiction handling (academic freedom)
+The book grants explicit academic freedom on internal contradictions: where two passages dictate
+different behavior we may choose either — **provided the report documents where the contradiction
+was found, what we chose, and why** (quantitative values always defer to the Appendix F table).
+We maintain an **interpretation log** section in each repo's README covering every such decision,
+plus deliberate under-specification we resolved (currently: first mover = thief, §4.2; capture-claim
+query semantics — the police may query "am I on you?" after landing, and only the thief's sealed
+truthful answer constitutes the capture event, §4.4/#21–22). Legal-loophole exploitation and rule
+upgrades by mutual agreement are explicitly encouraged by the book — any such agreement is recorded
+in the per-match config + interpretation log.
 
 ## 6. Mandatory-rules compliance map (Appendix E digest — all 55)
 
@@ -274,6 +300,9 @@ sealed during play and reported in the result file (#54).
 5. Both repos pass CI (Ruff clean, coverage ≥85%), contain README(5 components)+PRD+PLAN+TODO+
    per-match configs, cross-links, tag `v1.0-submission`, zero secrets in history.
 6. ≥2 counted league matches vs different teams played and reported (both sides), plus warm-ups.
+7. Evidence explicitly mapped to the book's **four success metrics** — Coordination (P2P turn
+   management, ch.2), Adaptation (belief under uncertainty, ch.4+6), Integrity (commit-reveal +
+   audit, ch.5), Architecture (Gatekeeper/Orchestrator resilience, ch.8+10) — in the README.
 
 ## 10. Open decisions & external inputs
 
