@@ -24,7 +24,7 @@ Legend: `[ ]` todo · `[~]` in progress · `[x]` done.
 - [x] `domain/scoring.py` — 20/5, 5/10, 0/0, tie 2/2 from config (#48)
 - [x] `shared/config.py` — shared `game.json` (schema + canonical `config_sha256`) + private `game.toml`; JSON-overrides-TOML
 - [x] Step/turn accounting + move-cap/survival-threshold cutoffs; full-turn boundary event
-- [ ] Dev-only text board printer (quarantined module)
+- [x] ~~Dev-only text board printer~~ dropped: sim stderr + replay viewer + live GUI cover every inspection need without a truth-leak surface
 - [x] Unit tests per PRD-1 · **GATE M1 demo recorded**
 
 ## 2. Stage 2 — MCP infrastructure (PRD-2)
@@ -45,7 +45,7 @@ Legend: `[ ]` todo · `[~]` in progress · `[x]` done.
 - [x] `strategy/police_brain.py` v1 — pursuit + barrier v1 + flood-fill self-trap veto
 - [x] `strategy/thief_brain.py` v1 — distance × mobility evasion
 - [x] Sim-runner (seeded headless brain-vs-brain tournaments + stats)
-- [ ] Regression bounds vs random baselines in CI · **GATE M3 demo recorded**
+- [x] Regression bounds vs random baselines in CI (police >=7/10 captures vs random walker; thief >=9/10 survivals) · **GATE M3 demo recorded**
 - [x] Seed `docs/STRATEGY.md` (living tactics doc — the book's "core of the grade"); update it at every gate with doctrine + evidence
 
 ## 4. Stage 4 — Language + scent (PRD-4)
@@ -62,10 +62,10 @@ Legend: `[ ]` todo · `[~]` in progress · `[x]` done.
 - [x] Fog sim-runner stats + regression bounds · **GATE M4 demo recorded**
 
 ## 5. Stage 5 — Cloud & tunneling (PRD-5)
-- [ ] ngrok (or Localtonet) account + runbook (`docs/RUNBOOK.md`): bring-up, URL rotation, teardown
+- [~] ngrok account + live drill pending · **`docs/RUNBOOK.md` written** (bring-up, URL rotation, negotiation, evidence kit, OAuth)
 - [x] Public-URL config wiring (bind 0.0.0.0; `opponent_url` in TOML)
 - [x] `handshake` negotiation for real: constitution agreement, `config_sha256` exchange, refuse-on-mismatch (#11–12); per-match config copy persisted under unique name
-- [ ] WAN resilience pass: timeouts under latency, reconnect-within-window, tunnel-kill ⇒ clean technical loss
+- [x] WAN resilience pass (simulated in CI: latency link series, dead-link ⇒ technical loss, opponent-silence ⇒ technical loss; live tunnel drill in §8)
 - [x] `smoke <url>` probe tool
 - [ ] Two-machine full sub-game over tunnels · **GATE M5 demo recorded**
 
@@ -113,6 +113,6 @@ Legend: `[ ]` todo · `[~]` in progress · `[x]` done.
 | Partner availability + 2+ opposing teams | both | ☐ |
 | 8-char group code | both | ☐ |
 | ngrok/Localtonet account(s) | ops | ☐ |
-| Google Cloud project + OAuth consent + `credentials.json` (send-only) | ops | ☐ |
+| Google OAuth: `credentials.json` wired from HW6 ✓; **run `uv run p2p-pursuit authorize` once** (HW6 refresh token expired - Testing-mode 7-day policy) | user | ◐ |
 | Decision: repo visibility (public vs private-shared) | both | ☐ |
 | Optional: Ollama install / Anthropic key for banter | ops | ☐ |

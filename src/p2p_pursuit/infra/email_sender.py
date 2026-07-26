@@ -30,22 +30,49 @@ class DryRunTransport:
 
 
 class GmailTransport:
-    """Real Gmail API transport - only imported/used when credentials exist."""
+    """Real Gmail API transport - only imported/used when credentials exist.
+
+    Refreshes an expired access token via the long-lived refresh token and
+    persists the renewal, so the agent stays autonomous for months (book
+    Appendix A). The send-only scope cannot create drafts, so any mode other
+    than "send" must be routed to the DryRunTransport by the caller.
+    """
 
     def __init__(self, credentials_path: Path = Path("credentials.json"),
                  token_path: Path = Path("token.json")) -> None:
+        from google.auth.transport.requests import Request
         from google.oauth2.credentials import Credentials
         from googleapiclient.discovery import build
 
         creds = Credentials.from_authorized_user_file(str(token_path), SCOPES)
+        if creds.expired and creds.refresh_token:
+            creds.refresh(Request())
+            token_path.write_text(creds.to_json(), encoding="utf-8")
         self._service = build("gmail", "v1", credentials=creds)
 
     def deliver(self, raw_b64: str, mode: str) -> dict[str, Any]:
-        users = self._service.users()
-        if mode == "send":
-            return users.messages().send(userId="me", body={"raw": raw_b64}).execute()
-        return users.drafts().create(
-            userId="me", body={"message": {"raw": raw_b64}}).execute()
+        if mode != "send":
+            raise ValueError("send-only scope: non-send modes use DryRunTransport")
+        return self._service.users().messages().send(
+            userId="me", body={"raw": raw_b64}).execute()
+
+
+def run_authorization(credentials_path: Path = Path("credentials.json"),
+                      token_path: Path = Path("token.json"), *, port: int = 0) -> str:
+    """One-time interactive OAuth consent (book Appendix A step E).
+
+    Opens (or prints) the consent URL; on approval writes a fresh token.json
+    with an access + refresh token pair. Needed once, and again whenever a
+    Testing-mode refresh token expires (Google revokes those after ~7 days).
+    """
+    from google_auth_oauthlib.flow import InstalledAppFlow
+
+    flow = InstalledAppFlow.from_client_secrets_file(str(credentials_path), SCOPES)
+    creds = flow.run_local_server(port=port, open_browser=True,
+                                  authorization_prompt_message=
+                                  "Open this URL to authorize gmail.send:\n{url}")
+    token_path.write_text(creds.to_json(), encoding="utf-8")
+    return "token.json written (send-only scope)"
 
 
 def build_report_email(*, to_addr: str, subject: str, body_text: str,

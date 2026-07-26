@@ -63,8 +63,10 @@ opponent-adaptive lie policy · auto-negotiation advisor — details in `PLAN.md
 ## 6. Version log
 | Version | Change | Evidence |
 |---|---|---|
-| v2.0 (shipped, code 0.1.0) | Full fog doctrine of 3: belief pursuit + entropy tie-break, kill-shot/corner-seal barriers with flood-fill veto, mobility+scent-centroid evasion, scent-consistent lies. Claim-thresholds calibrated to scent-posterior scale (top-cell mass ≈0.15-0.3 ⇒ claim ≥0.12, kill-shot ≥0.35). Claim answers exploited both ways: denial ⇒ hard negative evidence for police; any claim ⇒ belief collapse to the claimant's cell for the thief. | 12-seed × 6 tournament (72 sub-games): **16 captures / 56 survivals**, totals police 600 : thief 640 — a genuine contest near the 18-capture break-even; all 144 audits `Verified OK` |
+| v2.0 | First fog doctrine: belief pursuit + entropy tie-break, kill-shot/corner-seal barriers with flood-fill veto, mobility+scent-centroid evasion, scent-consistent lies; claim answers exploited both ways (denial ⇒ negative evidence; claim ⇒ thief's belief collapses to claimant's cell). | 72 sub-games: 16 captures, police 600 : thief 640; all audits `Verified OK` |
+| **v3.0 (shipped)** | **Police:** true interception — thief velocity estimated from the *scent trail* (freshest-cell displacement, cleaner than belief-peak jitter), pursuit-curve solve `pos = fresh + v·(1+k)` for the first reachable meeting point; disciplined claims (0.15 — every claim leaks our exact cell, so fewer + better-timed; sweep-validated on two seed ranges); kill-shot 0.30, corner-seal 0.20/dist 3. **Thief:** claim-radius risk term (belief mass within BFS ≤2 of candidate — where claims/kill-shots strike), forward-projection avoidance (mirror of lead pursuit), situational **juke** (break straight lines only under close pursuit — always-on zigzag measurably *hurts*: it slows net escape), two-ply mobility, corner discipline first half. | Cross-version matrix, 72-game cells: v3T cuts old-police captures **16→11**; v3P vs v3T **54/144 (37.5%)** and vs old thief 31/144 — above the 25% break-even vs the modern evader. Baselines: police captures a random walker **27/30**, thief survives a random police **30/30** (CI-gated). |
 
-Next tuning candidates: police interception (target the diffused peak's *exit* rather than the
-peak), earlier corridor building (barriers went unused in most games), thief endgame risk
-model (edge-running worked; corner discipline can relax after step ~25).
+Tuning lessons recorded for the README report: (1) always-on zigzag loses — straight flight is
+fast, wander is slow; juke only when chased. (2) Claim frequency is an information price, not
+free tempo — 0.15 beat 0.10 on fresh seeds 48:37. (3) Scent-trail velocity beats belief-peak
+velocity as an interception signal (the belief peak jitters under hint noise).

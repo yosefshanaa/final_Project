@@ -21,11 +21,14 @@ reveal → mutual audit**; any tampering is a technical loss, no appeal.
 | 2. FastMCP P2P infra — peer server+client, state machine, deadline tracker, watchdog | ✅ |
 | 3. Strategy module — `BrainBase` plug-in, police/thief doctrine, sim lab | ✅ |
 | 4. Language + scent — emission/decay, belief map, trust model, 4 banter providers | ✅ |
-| 5. Cloud exposure — public-URL config + smoke probe (tunnel runbook: warm-ups pending) | ✅ code / ☐ live drill |
+| 5. Cloud exposure — public-URL config, smoke probe, [`docs/RUNBOOK.md`](docs/RUNBOOK.md), CI chaos drills (latency / dead link / silence) | ✅ code / ☐ live tunnel drill |
 | 6. Crypto — commit-reveal, nonces, mutual audit, step-0 declaration, locks | ✅ |
 | 7. Reporting + GUI — 4 JSON artifacts, Gatekeeper, Gmail (draft/send), live GUI, replay verifier | ✅ |
 
-**Quality gate:** 78 tests, coverage **94%** (gate ≥85%), Ruff clean, CI on every push.
+**Quality gate:** 83 tests, coverage ≥94% (gate 85%), Ruff clean, CI on every push.
+**Strategy (v3, see [`docs/STRATEGY.md`](docs/STRATEGY.md)):** scent-trail interception police +
+risk-aware juking thief — cross-version validated; police captures a random walker 27/30,
+thief survives a random police 30/30 (both CI-gated).
 League play vs. real opposing teams and the two-repo submission split are still ahead
 (see [`docs/TODO.md`](docs/TODO.md) §8–9).
 
@@ -78,7 +81,7 @@ src/p2p_pursuit/
   gui/        live_view (belief heatmap + banner), replay_view, replay_data, view_model
   shared/     config (JSON constitution + private TOML), gatekeeper, rate_limiter, sysinfo
 config/police/  config/thief/   # byte-identical game.json + role-private game.toml
-tests/unit/  tests/integration/ # 78 tests incl. real MCP round-trip + cheat harness
+tests/unit/  tests/integration/ # 83 tests incl. real MCP round-trip + cheat harness
 docs/        PRD, PRD/1..7, PLAN, TODO, STRATEGY, GAP_ANALYSIS
 ```
 
@@ -113,7 +116,16 @@ Decisions where the book under-specifies or contradicts itself — documented as
    otherwise exceed the focal cap; decay ticks are applied per own-step (equivalent to
    full-turn decay under strict alternation, and exactly reproducible in the audit).
 
-## Secrets
+## Secrets & Gmail
 
 `credentials.json` / `token.json` (Gmail OAuth, send-only scope) are git-ignored and never
-committed. Without them the reporter runs in dry-run mode and says so.
+committed. The client credentials are reused from HW6; the refresh token needs a **one-time
+interactive consent**:
+
+```bash
+uv run p2p-pursuit authorize     # browser consent -> writes token.json
+```
+
+Then set `[email] mode = "send"` in `config/<role>/game.toml` for league matches. Without a
+valid token (or in `draft` mode) the reporter runs dry-run and says so - a send-only scope
+cannot create real Gmail drafts, so `draft` means "build the MIME locally, do not call Gmail".

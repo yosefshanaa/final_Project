@@ -45,17 +45,19 @@ def cmd_peer(args: argparse.Namespace) -> int:
             _err(f"[gui] disabled ({exc}); running headless")
     worker.join()
     result = result_holder.get("result", {})
-    transport = _pick_email_transport()
+    transport = _pick_email_transport(runtime.peer.email_mode)
     receipt = runtime.report(result, transport)
     _err(f"[email] {receipt}")
     print(json.dumps(result, indent=2, ensure_ascii=False))
     return 0
 
 
-def _pick_email_transport():
+def _pick_email_transport(mode: str):
     from .infra.email_sender import DryRunTransport
 
-    if Path("token.json").exists():
+    if mode != "send":
+        _err(f"[email] mode={mode!r}: dry-run transport (send-only scope has no drafts)")
+    elif Path("token.json").exists():
         try:
             from .infra.email_sender import GmailTransport
 
@@ -135,6 +137,13 @@ def cmd_replay(args: argparse.Namespace) -> int:
     return 0
 
 
+def cmd_authorize(args: argparse.Namespace) -> int:
+    from .infra.email_sender import run_authorization
+
+    _err(run_authorization(Path(args.credentials), Path(args.token)))
+    return 0
+
+
 def cmd_smoke(args: argparse.Namespace) -> int:
     from .infra.mcp_client import McpLink
 
@@ -175,6 +184,11 @@ def main(argv: list[str] | None = None) -> int:
     smoke = sub.add_parser("smoke", help="probe a peer's MCP endpoint")
     smoke.add_argument("url")
     smoke.set_defaults(fn=cmd_smoke)
+
+    auth = sub.add_parser("authorize", help="one-time Gmail OAuth consent (writes token.json)")
+    auth.add_argument("--credentials", default="credentials.json")
+    auth.add_argument("--token", default="token.json")
+    auth.set_defaults(fn=cmd_authorize)
 
     args = parser.parse_args(argv)
     return args.fn(args)
