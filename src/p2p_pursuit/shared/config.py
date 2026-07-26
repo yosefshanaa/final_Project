@@ -132,3 +132,21 @@ def load_peer(path: Path) -> PeerConfig:
 def load_role(config_dir: Path) -> tuple[SharedConfig, PeerConfig]:
     """Load one role's configuration pair from its private directory."""
     return load_shared(config_dir / "game.json"), load_peer(config_dir / "game.toml")
+
+
+def load_rate_limits(config_dir: Path, service: str = "gmail") -> dict[str, Any]:
+    """Local Gatekeeper defaults from the versioned rate_limits.json.
+
+    Validates the config version at startup (guidelines 8.1); the shared
+    constitution's rate_limiter_gatekeeper section overrides these where the
+    two overlap, because agreed values always win over private defaults.
+    """
+    path = config_dir / "rate_limits.json"
+    if not path.exists():
+        return {}
+    raw = json.loads(path.read_text(encoding="utf-8"))["rate_limits"]
+    version = raw.get("version", "")
+    if not version.startswith("1."):
+        raise ValueError(f"rate_limits.json version {version!r} incompatible (need 1.x)")
+    services = raw.get("services", {})
+    return services.get(service) or services.get("default") or {}

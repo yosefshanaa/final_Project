@@ -13,7 +13,7 @@ from tests.conftest import make_peer, make_shared
 def test_full_series_deterministic_and_audited():
     shared = make_shared(**{"movement_and_barriers.max_moves": 10,
                             "movement_and_barriers.survival_threshold": 10})
-    kw = dict(num_games=3, seed=11)
+    kw = {"num_games": 3, "seed": 11}
     a = run_series(shared, make_peer("police"), make_peer("thief"), **kw)
     b = run_series(shared, make_peer("police"), make_peer("thief"), **kw)
     assert [g.ending for g in a.sub_games] == [g.ending for g in b.sub_games]

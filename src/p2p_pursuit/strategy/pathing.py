@@ -31,7 +31,7 @@ def still_connected(board: Board, hypothetical_barrier: Cell, src: Cell, dst: Ce
     trial = board.clone()
     trial.add_barrier(hypothetical_barrier)
     if not trial.on_board(dst) or dst in trial.barriers:
-        dst_ok = [n for n in trial.open_neighbors(dst)] if trial.on_board(dst) else []
+        dst_ok = list(trial.open_neighbors(dst)) if trial.on_board(dst) else []
         return any(n in bfs_distances(trial, src) for n in dst_ok)
     return dst in bfs_distances(trial, src)
 

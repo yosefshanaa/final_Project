@@ -60,14 +60,11 @@ class TurnEngine(EngineState):
         sealed, h = seal(record)
         public = self._record(sealed, h)
         self.machine.transition(COMMITTING)
-        package: dict[str, Any] = {
-            "commit": {"kind": "commit", "role": self.role, "sub_game": self.sub_game,
-                       "step": self.my_steps, "hash": h},
-            "reveal": public,
-        }
+        commit = {"kind": "commit", "role": self.role, "sub_game": self.sub_game,
+                  "step": self.my_steps, "hash": h}
+        package: dict[str, Any] = {"commit": commit, "reveal": public}
         if self.role == POLICE and self.brain.should_claim(view, self.own_pos):
-            # The claim rides inside the reveal: the answer comes back atomically in
-            # the reveal response, so record ordering can never race across peers.
+            # Claim rides inside the reveal: the answer returns atomically, no race.
             package["reveal"]["claim"] = {"cell": list(self.own_pos), "at_step": self.my_steps}
         if self.role == THIEF and self.my_steps >= self.shared.survival_threshold:
             package["event"] = self._survival_claim()
@@ -81,21 +78,24 @@ class TurnEngine(EngineState):
         self.machine.transition(WAITING_FOR_OPPONENT)
         self.next_mover = self.other
 
-    def _captured_event(self, cause: str) -> dict:
-        record = protocol.captured_event_record(
-            role=self.role, sub_game=self.sub_game, at_step=self.my_steps, cause=cause)
+    def _seal_event(self, record: dict, ending: str, winner: str, cause: str) -> dict:
+        """Seal a forced game event, log it and finish the sub-game."""
         sealed, h = seal(record)
         public = self._record(sealed, h)
-        self._finish(CAPTURE, POLICE, cause)
+        self._finish(ending, winner, cause)
         return {"public": public, "hash": h}
 
+    def _captured_event(self, cause: str) -> dict:
+        return self._seal_event(
+            protocol.captured_event_record(role=self.role, sub_game=self.sub_game,
+                                           at_step=self.my_steps, cause=cause),
+            CAPTURE, POLICE, cause)
+
     def _survival_claim(self) -> dict:
-        record = protocol.survival_claim_record(
-            role=self.role, sub_game=self.sub_game, steps=self.my_steps)
-        sealed, h = seal(record)
-        public = self._record(sealed, h)
-        self._finish(SURVIVAL, THIEF, f"survived {self.my_steps} steps")
-        return {"public": public, "hash": h}
+        return self._seal_event(
+            protocol.survival_claim_record(role=self.role, sub_game=self.sub_game,
+                                           steps=self.my_steps),
+            SURVIVAL, THIEF, f"survived {self.my_steps} steps")
 
     # -- opponent's move ----------------------------------------------------
     def on_commit(self, msg: dict) -> dict:
@@ -124,12 +124,10 @@ class TurnEngine(EngineState):
         return {"ok": True, "events": events}
 
     def _barrier_capture(self, cell: Cell) -> dict:
-        record = protocol.captured_event_record(
-            role=self.role, sub_game=self.sub_game, at_step=self.my_steps, cause="barrier")
-        sealed, h = seal(record)
-        public = self._record(sealed, h)
-        self._finish(CAPTURE, POLICE, f"barrier onto {cell}")
-        return {"public": public, "hash": h}
+        return self._seal_event(
+            protocol.captured_event_record(role=self.role, sub_game=self.sub_game,
+                                           at_step=self.my_steps, cause="barrier"),
+            CAPTURE, POLICE, f"barrier onto {cell}")
 
     def _update_belief(self, pub: dict) -> None:
         self.belief.scent_update(pub["scent"], self.board)
@@ -144,11 +142,8 @@ class TurnEngine(EngineState):
 
     # -- claims and events --------------------------------------------------
     def _answer_claim(self, claim: dict) -> dict:
-        """Thief side: the cryptographically bound truthful answer (rule #21).
-
-        A claim discloses the claimant's exact cell - priceless counter-intel:
-        the belief collapses to a delta at the claimed position.
-        """
+        """Thief side: bound truthful answer (rule #21). The claim discloses the
+        claimant's exact cell - our belief collapses to a delta there."""
         self.belief = BeliefMap.at(self.shared.grid_size, tuple(claim["cell"]))
         answer = list(self.own_pos) == list(claim["cell"])
         record = protocol.capture_answer_record(
@@ -173,9 +168,8 @@ class TurnEngine(EngineState):
         elif pub["kind"] == protocol.KIND_CAPTURED_EVENT:
             self._finish(CAPTURE, POLICE, pub["cause"])
         elif pub["kind"] == protocol.KIND_SURVIVAL_CLAIM:
-            ok = pub["steps"] >= self.shared.survival_threshold and \
-                self.opp_steps + 1 >= pub["steps"]
-            if ok:
+            if pub["steps"] >= self.shared.survival_threshold and \
+                    self.opp_steps + 1 >= pub["steps"]:
                 self._finish(SURVIVAL, THIEF, f"survival at {pub['steps']} steps")
             else:
                 self.declare_technical(self.other, "false survival claim")

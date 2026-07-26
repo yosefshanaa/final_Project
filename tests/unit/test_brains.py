@@ -14,11 +14,11 @@ from p2p_pursuit.strategy.thief_brain import ThiefBrain
 def view_for(role, pos, board=None, belief=None, seed=0, **kw):
     board = board or Board(7)
     belief = belief or BeliefMap(7)
-    defaults = dict(role=role, sub_game=1, step=1, own_pos=pos, board=board, belief=belief,
-                    opp_scent=[[0.0] * 7 for _ in range(7)],
-                    own_scent=[[0.0] * 7 for _ in range(7)], barriers_used=0,
-                    barrier_quota=14, steps_remaining=30, survival_threshold=35,
-                    trust=0.5, map_area="", rng=random.Random(seed))
+    defaults = {"role": role, "sub_game": 1, "step": 1, "own_pos": pos, "board": board,
+                "belief": belief, "opp_scent": [[0.0] * 7 for _ in range(7)],
+                "own_scent": [[0.0] * 7 for _ in range(7)], "barriers_used": 0,
+                "barrier_quota": 14, "steps_remaining": 30, "survival_threshold": 35,
+                "trust": 0.5, "map_area": "", "rng": random.Random(seed)}
     defaults.update(kw)
     return BrainView(**defaults)
 

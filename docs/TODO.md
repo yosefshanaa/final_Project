@@ -13,7 +13,7 @@ Legend: `[ ]` todo · `[~]` in progress · `[x]` done.
 - [x] Copy this docs set (PRD, PRD/, PLAN, TODO, GAP_ANALYSIS) into both repos (mandatory content, rule #50)
 - [ ] Choose 8-char group code (no spaces) with partner; record here: `________`
 - [x] Skim reference repo `docs/STRATEGY.md` + sample artifacts; extract interop contract notes
-- [ ] Obtain the course-intro file "Recommendations for writing & submitting software with AI agents" and audit our repos against it (it is the stated grading rubric)
+- [x] Audited against `software_submission_guidelines-V3` (the grading rubric): SDK facade added, Gatekeeper FIFO overflow queue, versions to 1.00, extended Ruff profile (N/C4/SIM), `.env-example`, `docs/PROMPT_BOOK.md`, `docs/COST_ANALYSIS.md`, `notebooks/strategy_sweep.py`, README as full user manual, PLAN C4/state/sequence diagrams, versioned rate_limits.json + logging_config.json
 - [x] Start the README **interpretation log** (academic-freedom decisions: first mover = thief; capture-claim query semantics; + anything found later)
 
 ## 1. Stage 1 — Base logic (PRD-1)
@@ -91,7 +91,7 @@ Legend: `[ ]` todo · `[~]` in progress · `[x]` done.
 - [x] Burst + infinite-loop drills · **GATE M7 demo recorded**
 
 ## 8. League play
-- [ ] Warm-up interop game vs a reference-derived peer (uncounted)
+- [ ] Warm-up interop game vs a reference-derived peer (uncounted; tool-name contract differs - see RUNBOOK §3b)
 - [ ] Partner-team #1: negotiate, lock, play 6 sub-games, audit, agree, both report, archive artifacts+config to repos
 - [ ] Partner-team #2: same (pass gate = 2 counted matches vs different teams)
 - [ ] Optional additional counted matches (≤10 total; diversity reward per new opponent)

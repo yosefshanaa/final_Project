@@ -19,7 +19,7 @@ from ..infra.mcp_server import serve_in_thread, wait_until_up
 from ..shared.config import load_role
 from ..strategy.talk_llm import make_talk_provider
 from . import runtime_reports
-from .deadline import DeadlineExpired, DeadlineTracker
+from .deadline import DeadlineExpiredError, DeadlineTracker
 from .service import PeerService
 from .turn_engine import TurnEngine
 from .watchdog import Watchdog
@@ -90,7 +90,7 @@ class PeerRuntime:
                     package = engine.build_own_step()
                 try:
                     self._send_package(package)
-                except DeadlineExpired as exc:
+                except DeadlineExpiredError as exc:
                     with self.service.locked():
                         engine.declare_technical(engine.other, f"no response: {exc}")
             elif not self.service.wait_for_my_turn(self.peer.turn_timeout_seconds):

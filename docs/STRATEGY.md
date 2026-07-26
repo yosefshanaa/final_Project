@@ -4,7 +4,7 @@ Living document. The book makes the movement policy "the core of the grade" (App
 mandates a **separate strategy module** plugged into the PeerRuntime *after* hint decode and
 *before* commit pack (ch. 6.2). Requirements live in [`PRD.md`](PRD.md) §8 and
 [`PRD/PRD-3`](PRD/PRD-3-strategy-blind.md)/[`PRD-4`](PRD/PRD-4-language-and-scent.md); design
-rationale in [`PLAN.md`](PLAN.md) §5. This file tracks the **actual shipped doctrine per version**
+rationale in [`PLAN.md`](PLAN.md) §6. This file tracks the **actual shipped doctrine per version**
 and the evidence behind it — it also feeds the mandatory "strategies implemented" README section.
 
 ## 1. Binding constraints (from the book)
@@ -58,7 +58,7 @@ per version (this doubles as academic-README evidence).
 
 ## 5. Extensions backlog (excellence)
 Particle-filter belief · bounded expectimax endgame · articulation-point barrier analysis ·
-opponent-adaptive lie policy · auto-negotiation advisor — details in `PLAN.md` §5.5.
+opponent-adaptive lie policy · auto-negotiation advisor — details in `PLAN.md` §6.5.
 
 ## 6. Version log
 | Version | Change | Evidence |

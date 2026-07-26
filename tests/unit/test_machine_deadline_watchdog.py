@@ -2,7 +2,7 @@
 
 import pytest
 
-from p2p_pursuit.peer.deadline import DeadlineExpired, DeadlineTracker
+from p2p_pursuit.peer.deadline import DeadlineExpiredError, DeadlineTracker
 from p2p_pursuit.peer.state_machine import (
     AWAITING_REVEAL,
     COMMITTING,
@@ -11,7 +11,7 @@ from p2p_pursuit.peer.state_machine import (
     VERIFYING,
     WAITING_FOR_OPPONENT,
     GamePhaseMachine,
-    IllegalTransition,
+    IllegalTransitionError,
 )
 from p2p_pursuit.peer.watchdog import ALIVE, SHUTDOWN, Watchdog
 
@@ -26,17 +26,17 @@ def test_legal_turn_cycle():
 
 def test_illegal_transitions_raise():
     m = GamePhaseMachine()
-    with pytest.raises(IllegalTransition):
+    with pytest.raises(IllegalTransitionError):
         m.transition(COMMITTING)  # cannot skip COMPUTING_MOVE
     m.transition(COMPUTING_MOVE)
-    with pytest.raises(IllegalTransition):
+    with pytest.raises(IllegalTransitionError):
         m.transition(VERIFYING)
 
 
 def test_technical_loss_is_terminal():
     m = GamePhaseMachine()
     m.transition(TECHNICAL_LOSS)
-    with pytest.raises(IllegalTransition):
+    with pytest.raises(IllegalTransitionError):
         m.transition(COMPUTING_MOVE)
 
 
@@ -49,7 +49,7 @@ def test_deadline_retries_then_expires():
         raise ConnectionError("down")
 
     d = DeadlineTracker(timeout_sec=1, max_retries=2, backoff_sec=5, sleep=sleeps.append)
-    with pytest.raises(DeadlineExpired):
+    with pytest.raises(DeadlineExpiredError):
         d.call(flaky)
     assert calls["n"] == 3 and sleeps == [5, 5]
 

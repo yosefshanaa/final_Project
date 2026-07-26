@@ -15,7 +15,7 @@ VERIFYING = "VERIFYING"
 TECHNICAL_LOSS = "TECHNICAL_LOSS"
 
 
-class IllegalTransition(RuntimeError):
+class IllegalTransitionError(RuntimeError):
     pass
 
 
@@ -34,7 +34,7 @@ class GamePhaseMachine:
 
     def transition(self, target: str) -> str:
         if target not in self.TRANSITIONS[self.state]:
-            raise IllegalTransition(f"Illegal transition: {self.state} -> {target}")
+            raise IllegalTransitionError(f"Illegal transition: {self.state} -> {target}")
         self.state = target
         return self.state
 

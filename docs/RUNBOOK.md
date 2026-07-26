@@ -46,12 +46,33 @@ uv run p2p-pursuit smoke https://their-tunnel.ngrok-free.app/mcp
 uv run p2p-pursuit peer --role thief --counted --prior-counted 1
 ```
 
+## 3b. Interop with reference-derived opponents
+
+The lecturer's example repo exposes a different tool surface — `negotiate`, `receive_turn`
+(one message per turn), `submit_audit`, `receive_control` — while ours mirrors the book's
+four-phase figure: `handshake`, `receive_commit` → `receive_reveal` → `receive_event`,
+`audit_exchange` (+ `get_status`, `health_check`). The *cryptographic content* is identical
+(commit = SHA-256 of the sealed record, nonce withheld until the audit — confirmed in the
+reference's `protocol.py`), so this is a naming/framing difference only. The wire contract is
+pair-negotiated (book: the constitution is set "in negotiation between each pair of teams"):
+agree during warm-ups which surface the match uses; adapting is a thin transport-level shim on
+either side (`infra/mcp_client.py` isolates every outbound call; the service facade isolates
+every inbound one). Do this in an **uncounted warm-up first** — never discover a contract
+mismatch inside a counted match.
+
 ## 4. After the match
 
 Each side automatically: audits the opponent's sealed log, writes the four artifacts under
 `results/<role>-<game_id>/`, and emails `result_<game_id>.json` to
 `rmisegal+uoh26finalgame@gmail.com` (**both teams send separately** — a missing report forfeits
-that side's points). Commit the per-match `config_*.json` copies to the repo (Appendix F).
+that side's points).
+
+**Archive the match** (Appendix F requires per-match configs in the repo; `results/` is
+git-ignored, `matches/` is tracked):
+
+```bash
+cp -r results/<role>-<game_id> matches/ && git add matches && git commit -m "match: <game_id>"
+```
 
 Evidence kit per match: live-GUI belief-heatmap screenshot, replay `Verified OK` screenshot
 (`uv run p2p-pursuit replay --log results/.../log_*_g01.json`), terminal output, Gmail id.

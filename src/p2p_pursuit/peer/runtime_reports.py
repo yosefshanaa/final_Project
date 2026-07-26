@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import contextlib
 from typing import Any
 
 from ..domain import declarations, negotiation
@@ -11,7 +12,7 @@ from ..report import artifacts, results
 from ..shared import sysinfo
 from ..shared.gatekeeper import Gatekeeper
 from . import audit_bridge, log_manager
-from .deadline import DeadlineExpired
+from .deadline import DeadlineExpiredError
 
 
 def write_declaration(rt: Any, theirs: dict[str, Any]) -> None:
@@ -36,10 +37,8 @@ def finish_sub_game(rt: Any, n: int, log_fn) -> dict[str, Any]:
     """Mutual audit, log artifact and score row for one finished sub-game."""
     engine = rt.engine
     their_view = {"verdict": "not received", "violations": []}
-    try:
+    with contextlib.suppress(DeadlineExpiredError):
         their_view = rt.deadline.call(rt.link.audit, audit_bridge.audit_package(engine))
-    except DeadlineExpired:
-        pass
     got = rt.service.wait_for_audit(n, rt.deadline.timeout_sec * 2)
     my_verdict = rt.service.audit_verdicts.get(
         n, {"verdict": "no package received", "violations": []})
@@ -85,8 +84,18 @@ def build_result(rt: Any) -> dict[str, Any]:
 
 
 def email_report(rt: Any, result: dict[str, Any], transport: Any) -> dict[str, Any]:
-    """Both teams send separately (#35); the Gatekeeper fronts the account."""
-    gate = Gatekeeper.from_config(rt.shared.rate_limiter)
+    """Both teams send separately (#35); the Gatekeeper fronts the account.
+
+    Rate config = versioned local defaults (rate_limits.json) overridden by
+    the agreed constitution section - negotiated values always win.
+    """
+    from pathlib import Path
+
+    from ..shared.config import load_rate_limits
+
+    local = load_rate_limits(Path(f"config/{rt.role}"))
+    gate = Gatekeeper.from_config({**local, **rt.shared.rate_limiter},
+                                  daily_quota=local.get("daily_quota", 50))
     attachments = {f"result_{rt.game_id}.json": result}
     return send_report(
         transport=transport, gatekeeper=gate, to_addr=rt.peer.email_recipient,

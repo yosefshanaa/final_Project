@@ -1,7 +1,7 @@
 """Deadline Tracker (rule #6): no request ever waits unbounded.
 
 A transport call gets a per-request timeout, bounded retries with backoff,
-and then a DeadlineExpired that the caller turns into a clean technical
+and then a DeadlineExpiredError that the caller turns into a clean technical
 loss - a missed deadline is a failure, not patience (book ch. 8.4).
 """
 
@@ -12,7 +12,7 @@ from collections.abc import Callable
 from typing import Any
 
 
-class DeadlineExpired(RuntimeError):
+class DeadlineExpiredError(RuntimeError):
     pass
 
 
@@ -34,6 +34,6 @@ class DeadlineTracker:
                 self.last_error = exc
                 if attempt < self.max_retries:
                     self._sleep(self.backoff_sec)
-        raise DeadlineExpired(
+        raise DeadlineExpiredError(
             f"no response after {self.max_retries + 1} attempts: {self.last_error}"
         ) from self.last_error

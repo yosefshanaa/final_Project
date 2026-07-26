@@ -44,35 +44,100 @@ All hashed payloads (commits, config lock, scent-model lock, declarations) seria
 JSON: `sort_keys=True, separators=(",", ":"), ensure_ascii=False, UTF-8`. One function
 (`domain/crypto.py:canonical_bytes`) is the only entry point — golden cross-platform tests pin it.
 
-## 2. Module layout (target tree)
+## 2. Architecture diagrams (C4-style)
+
+### 2.1 Container view — one peer (both peers are identical)
+
+```mermaid
+flowchart TB
+    OPP[Opponent peer\npublic URL via tunnel]
+    subgraph PEER [One autonomous peer process]
+        SRV[FastMCP server\n8 tools] --> SVC[PeerService\nlock + condition]
+        RUN[PeerRuntime\norchestrator gateway] --> SVC
+        SVC --> ENG[TurnEngine\nprotocol core]
+        ENG --> BRAIN[Strategy brain\nBrainBase plug-in]
+        ENG --> BEL[Belief map + trust]
+        ENG --> SCENT[Own scent field]
+        ENG --> CRYPTO[commit-reveal + audit]
+        RUN --> DT[Deadline tracker]
+        RUN --> WD[Watchdog]
+        RUN --> REP[Artifacts + result\n+ Gatekeeper -> Gmail]
+        GUI[Live GUI - local truth only] -. poll status .-> SVC
+    end
+    RUN -- MCP client calls --> OPP
+    OPP -- MCP tool calls --> SRV
+    CLI[CLI] --> SDKF[PursuitSDK facade] --> RUN
+```
+
+### 2.2 Turn state machine (book ch. 8.3, enforced table)
+
+```mermaid
+stateDiagram-v2
+    [*] --> WAITING_FOR_OPPONENT
+    WAITING_FOR_OPPONENT --> COMPUTING_MOVE : turn received
+    COMPUTING_MOVE --> COMMITTING : record sealed
+    COMMITTING --> AWAITING_REVEAL : hash sent
+    AWAITING_REVEAL --> VERIFYING : ack/reveal exchanged
+    VERIFYING --> WAITING_FOR_OPPONENT : verified
+    WAITING_FOR_OPPONENT --> TECHNICAL_LOSS : timeout
+    COMPUTING_MOVE --> TECHNICAL_LOSS
+    COMMITTING --> TECHNICAL_LOSS
+    AWAITING_REVEAL --> TECHNICAL_LOSS : opponent silent
+    VERIFYING --> TECHNICAL_LOSS : tamper
+    TECHNICAL_LOSS --> [*]
+```
+
+### 2.3 One step over the wire (sequence)
+
+```mermaid
+sequenceDiagram
+    participant M as Mover
+    participant O as Observer
+    M->>M: brain decides move+hint+intent, seal record
+    M->>O: receive_commit(hash only)
+    O-->>M: ack (locked)
+    M->>O: receive_reveal(public: hint, scent, barrier[, claim])
+    O->>O: belief update; forced events (confession / claim answer)
+    O-->>M: events (sealed envelopes)
+    Note over M,O: sub-game end: audit_exchange(full sealed log + nonces) both ways
+```
+
+## 3. Module layout (target tree)
 
 ```
 src/p2p_pursuit/
-  __main__.py, cli.py            # peer / replay / smoke entry points
+  __main__.py cli.py             # thin arg-parsing shell over the SDK
+  sdk/sdk.py                     # PursuitSDK - the single business-logic entry point
   domain/                        # stage 1+4+6 pure logic (no I/O)
     board.py rules.py scoring.py         # PRD-1
-    scent.py belief.py trust.py          # PRD-4
-    crypto.py audit.py declarations.py   # PRD-6
+    scent.py belief.py trust.py hints.py # PRD-4
+    crypto.py protocol.py audit.py       # PRD-6
+    declarations.py negotiation.py game_ids.py
     brains_base.py                       # BrainBase plug-in contract (PRD-3)
-    game_ids.py negotiation.py
-  strategy/                      # OUR graded brains (police_brain.py, thief_brain.py,
-    pathing.py barriers.py lies.py       #   search.py) + banter providers
+  strategy/                      # OUR graded brains + banter providers
+    police_brain.py thief_brain.py pathing.py
     talk_template.py talk_llm.py
   peer/                          # PRD-2 runtime
-    runtime.py orchestrator.py state_machine.py
-    turn_loop.py deadline.py watchdog.py log_manager.py
+    engine_state.py turn_engine.py       # protocol core (state + handlers)
+    service.py runtime.py runtime_reports.py
+    local_match.py                       # in-process series driver (tactics lab)
+    state_machine.py deadline.py watchdog.py
+    log_manager.py audit_bridge.py
   infra/                         # I/O adapters
-    mcp_server.py mcp_client.py tunnel_doc.md
-    email_sender.py llm_providers.py
+    mcp_server.py mcp_client.py transport.py email_sender.py
   report/                        # PRD-7 artifacts
-    schemas.py artifacts.py results.py
-  gui/                           # PRD-7 views
-    live_view.py heatmap.py banner.py replay_view.py verify_panel.py
+    artifacts.py results.py
+  gui/                           # PRD-7 views (pure logic separated from Tk shells)
+    view_model.py live_view.py replay_data.py replay_view.py
   shared/
-    config.py gatekeeper.py rate_limiter.py sysinfo.py version.py
-config/police/  config/thief/    # game.json + game.toml + rate_limits per role
-tests/unit/  tests/integration/  # mirrors src/
-docs/  (PRD.md, PRD/, PLAN.md, TODO.md, GAP_ANALYSIS.md, STRATEGY.md, RUNBOOK.md)
+    config.py gatekeeper.py rate_limiter.py sysinfo.py version.py logging_setup.py
+config/police/ config/thief/     # game.json + game.toml + rate_limits.json per role
+config/logging_config.json
+notebooks/strategy_sweep.py      # parameter-sensitivity runner (guidelines §9)
+matches/                         # tracked per-match artifact archive (Appendix F)
+tests/unit/ tests/integration/   # mirrors src/
+docs/  PRD.md PRD/ PLAN.md TODO.md STRATEGY.md RUNBOOK.md
+       PROMPT_BOOK.md COST_ANALYSIS.md GAP_ANALYSIS.md
 ```
 
 Per-turn dataflow (each peer, symmetric):
@@ -81,7 +146,7 @@ trust-weighted hint) → **brain decides** move/barrier + hint + intent → **co
 ack → **reveal** → **verify opponent's reveal** (legality + consistency) → **log** sealed record
 → GUI refresh. After both sides moved: scent decay tick.
 
-## 3. Reuse map
+## 4. Reuse map
 
 | Asset | From | Into | Work |
 |---|---|---|---|
@@ -94,7 +159,7 @@ ack → **reveal** → **verify opponent's reveal** (legality + consistency) →
 | Search-under-rules concept | HW6 `strategy/search*` | `strategy/search.py` | rewrite: 4-orthogonal, barrier-turn, belief state |
 | Interface conventions (`BrainBase`, `[strategy]`, `[trash_talk]`, artifact names, ports 8801/8802) | reference repo | contract layer | conform, don't copy |
 
-## 4. The seven build layers → milestones
+## 5. The seven build layers → milestones
 
 | # | Layer (PRD) | Gate (binary, from book §10.4) |
 |---|---|---|
@@ -112,7 +177,7 @@ every bug into a multi-variable investigation).
 Suggested calendar (adjust to deadline): M1–M2 week 1 · M3 week 2 · M4 weeks 2–3 · M5 week 3 ·
 M6 week 4 · M7 week 5 · league warm-ups + counted matches week 6 · polish/submission week 7.
 
-## 5. Strategy design (the graded core)
+## 6. Strategy design (the graded core)
 
 ### 5.1 Belief engine
 Grid posterior `b(s)`; per turn: (1) **diffuse** through the opponent-motion model (uniform over
@@ -165,7 +230,7 @@ for the academic README).
    management, per the book's "highly recommended" pointer to the A2A/ACP protocols (MCP remains
    the mandated wire protocol — this is bookkeeping semantics only).
 
-## 6. League operations
+## 7. League operations
 
 1. **Warm-ups first** (uncounted, declared as such): interop check vs reference-derived peers —
    tool contract, artifact schemas, scent-lock exchange.
@@ -180,7 +245,7 @@ for the academic README).
 4. Evidence kit per match: GUI screenshots, replay `Verified OK` screenshot, terminal output,
    Gmail message id.
 
-## 7. Risks & mitigations
+## 8. Risks & mitigations
 
 | Risk | Mitigation |
 |---|---|
@@ -194,6 +259,6 @@ for the academic README).
 | Two-repo drift | scripted sync + CI on both; single source of truth workspace |
 | Late discovery of grading gaps | PRD §6 rule map reviewed at every milestone; final pre-submission checklist (TODO §9) |
 
-## 8. Quality gates (every PR)
+## 9. Quality gates (every PR)
 `uv run ruff check` clean · `uv run pytest --cov` ≥85% · file-length lint (≤~150 code lines) ·
 no-secret scan · sim-runner regression bounds green · docs updated with the change.

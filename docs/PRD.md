@@ -272,7 +272,7 @@ recorded in the per-match config + interpretation log.
 
 ## 8. Strategy & tactics (the graded core — our interpretation)
 
-> Detailed design in [`PLAN.md`](PLAN.md) §5 and PRD-3/PRD-4. Move choice is **always pure Python**.
+> Detailed design in [`PLAN.md`](PLAN.md) §6 and PRD-3/PRD-4. Move choice is **always pure Python**.
 
 - **Belief engine (both roles):** grid posterior from scent likelihood (emission×decay forward
   model) × hint likelihood × motion model; a **trust coefficient** per opponent, updated whenever

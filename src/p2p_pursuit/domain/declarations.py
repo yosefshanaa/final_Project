@@ -49,5 +49,5 @@ def build_declaration(
         "ended_at": None,
         "teams": {"mine": me, "opponent": opponent},
     }
-    body["declaration_sha256"] = digest({k: v for k, v in body.items()})
+    body["declaration_sha256"] = digest(dict(body))
     return body
