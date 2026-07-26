@@ -46,6 +46,7 @@ Legend: `[ ]` todo · `[~]` in progress · `[x]` done.
 - [ ] `strategy/thief_brain.py` v1 — distance × mobility evasion
 - [ ] Sim-runner (seeded headless brain-vs-brain tournaments + stats)
 - [ ] Regression bounds vs random baselines in CI · **GATE M3 demo recorded**
+- [x] Seed `docs/STRATEGY.md` (living tactics doc — the book's "core of the grade"); update it at every gate with doctrine + evidence
 
 ## 4. Stage 4 — Language + scent (PRD-4)
 - [ ] `domain/scent.py` — 5×5 emission (τ₀=0.9), radial falloff, decay ρ=0.10; golden-matrix tests (incl. 0.9→0.81)
@@ -97,7 +98,7 @@ Legend: `[ ]` todo · `[~]` in progress · `[x]` done.
 - [ ] Evidence kit per match: heatmap screenshot, `Verified OK` screenshot, terminal output, Gmail id
 
 ## 9. Submission (book ch. 9/11 + Appendix C)
-- [ ] Academic README in **both** repos — 5 mandatory components: Dec-POMDP formalization · FastMCP orchestration dilemmas · strategies implemented · RL learning curves (only if RL used) · **screenshots (belief heatmap + `Verified OK`)** — plus cross-link to the sister repo (#49)
+- [ ] Academic README in **both** repos — 5 mandatory components: Dec-POMDP formalization · FastMCP orchestration dilemmas · **strategies implemented (link `docs/STRATEGY.md`)** · RL learning curves (only if RL used) · **screenshots (belief heatmap + `Verified OK`)** — plus cross-link to the sister repo (#49)
 - [ ] Both repos contain: README, `/config` (incl. every match's config), PRD files, PLAN, TODO (#50)
 - [ ] Per-match commit hashes recorded in declarations + result files
 - [ ] Verify no secrets in either repo **history**; `.gitignore` present (#39–40)
