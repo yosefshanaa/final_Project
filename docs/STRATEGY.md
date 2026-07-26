@@ -63,5 +63,8 @@ opponent-adaptive lie policy · auto-negotiation advisor — details in `PLAN.md
 ## 6. Version log
 | Version | Change | Evidence |
 |---|---|---|
-| v1 (planned) | Blind brains, BFS/mobility | gate M3 stats |
-| v2 (planned) | Belief-driven fog doctrine above | gate M4 stats |
+| v2.0 (shipped, code 0.1.0) | Full fog doctrine of 3: belief pursuit + entropy tie-break, kill-shot/corner-seal barriers with flood-fill veto, mobility+scent-centroid evasion, scent-consistent lies. Claim-thresholds calibrated to scent-posterior scale (top-cell mass ≈0.15-0.3 ⇒ claim ≥0.12, kill-shot ≥0.35). Claim answers exploited both ways: denial ⇒ hard negative evidence for police; any claim ⇒ belief collapse to the claimant's cell for the thief. | 12-seed × 6 tournament (72 sub-games): **16 captures / 56 survivals**, totals police 600 : thief 640 — a genuine contest near the 18-capture break-even; all 144 audits `Verified OK` |
+
+Next tuning candidates: police interception (target the diffused peak's *exit* rather than the
+peak), earlier corridor building (barriers went unused in most games), thief endgame risk
+model (edge-running worked; corner discipline can relax after step ~25).

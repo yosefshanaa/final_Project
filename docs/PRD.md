@@ -210,12 +210,16 @@ LLM token consumption is metered and sealed during play and reported in the resu
 The book grants explicit academic freedom on internal contradictions: where two passages dictate
 different behavior we may choose either — **provided the report documents where the contradiction
 was found, what we chose, and why** (quantitative values always defer to the Appendix F table).
-We maintain an **interpretation log** section in each repo's README covering every such decision,
-plus deliberate under-specification we resolved (currently: first mover = thief, §4.2; capture-claim
-query semantics — the police may query "am I on you?" after landing, and only the thief's sealed
-truthful answer constitutes the capture event, §4.4/#21–22). Legal-loophole exploitation and rule
-upgrades by mutual agreement are explicitly encouraged by the book — any such agreement is recorded
-in the per-match config + interpretation log.
+We maintain an **interpretation log** section in each repo's README (canonical location) covering
+every such decision. Current entries: (1) per-step Reveal discloses the public projection only —
+moves/positions/nonces open at the sub-game audit (fig. 6 read literally would collapse partial
+observability; matches the reference implementation); (2) first mover = thief (§4.2); (3)
+capture-claim query semantics — only the thief's sealed truthful answer constitutes capture, and
+the claim rides inside the reveal (§4.4/#21–22); (4) scent served pre-emission (freshest visible
+τ≈0.81, the book's own worked example); (5) τ clamped to [0,0.9], decay applied per own-step
+(audit-reproducible, equivalent under strict alternation). Legal-loophole exploitation and rule
+upgrades by mutual agreement are explicitly encouraged by the book — any such agreement is
+recorded in the per-match config + interpretation log.
 
 ## 6. Mandatory-rules compliance map (Appendix E digest — all 55)
 
