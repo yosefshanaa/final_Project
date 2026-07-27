@@ -98,7 +98,7 @@ Legend: `[ ]` todo · `[~]` in progress · `[x]` done.
 - [ ] Evidence kit per match: heatmap screenshot, `Verified OK` screenshot, terminal output, Gmail id
 
 ## 9. Submission (book ch. 9/11 + Appendix C)
-- [ ] Academic README in **both** repos — 5 mandatory components: Dec-POMDP formalization · FastMCP orchestration dilemmas · **strategies implemented (link `docs/STRATEGY.md`)** · RL learning curves (only if RL used) · **screenshots (belief heatmap + `Verified OK`)** — plus cross-link to the sister repo (#49)
+- [~] Academic README — 5 mandatory components **written** (Dec-POMDP formalization §1 · FastMCP orchestration dilemmas §2 · strategies §3 → `docs/STRATEGY.md` · RL n/a note §4 · screenshots section §5 with tracked `docs/img/` paths); **still pending**: drop in the actual screenshots, fill the sister-repo cross-links, copy into both repos (#49)
 - [ ] Both repos contain: README, `/config` (incl. every match's config), PRD files, PLAN, TODO (#50)
 - [ ] Per-match commit hashes recorded in declarations + result files
 - [ ] Verify no secrets in either repo **history**; `.gitignore` present (#39–40)
