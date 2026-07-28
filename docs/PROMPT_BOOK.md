@@ -74,6 +74,15 @@ numbers in `STRATEGY.md` §6):
 versioning to 1.00, extended Ruff profile (N/C4/SIM), `.env-example`, this prompt book, the
 cost analysis, and the parameter-sweep runner in `notebooks/`.
 
+## 6. Continuation prompt
+
+The remaining work (OAuth consent, two-repo split, screenshots, tunnel drill, league matches,
+submission mechanics) is packaged as a single self-contained handoff prompt —
+[`CONTINUATION_PROMPT.md`](CONTINUATION_PROMPT.md) — encoding the project state, the
+non-negotiable guardrails (secrets, lecturer-address, quality gates, game integrity), the
+dependency-ordered task list with acceptance criteria, and the human-only steps. Pasting it
+into a fresh session resumes the project without re-derivation.
+
 ## Lessons that transfer
 
 - **PRD-before-code works with AI agents**: every stage that had a written gate shipped green;
