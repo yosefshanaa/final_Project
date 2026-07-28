@@ -22,6 +22,13 @@ def _err(msg: str) -> None:
 
 
 def cmd_peer(args: argparse.Namespace) -> int:
+    from .shared.config import repo_default_role
+
+    role = args.role or repo_default_role()
+    if role is None:
+        _err("peer: --role required (this checkout has no ROLE marker)")
+        return 2
+    args.role = role
     sdk = PursuitSDK()
     runtime = sdk.create_peer(args.role, Path(args.config_dir) if args.config_dir else None,
                               out_dir=Path(args.out), seed=args.seed, counted=args.counted,
@@ -135,7 +142,8 @@ def main(argv: list[str] | None = None) -> int:
     sub = parser.add_subparsers(dest="command", required=True)
 
     peer = sub.add_parser("peer", help="run one autonomous peer over the network")
-    peer.add_argument("--role", choices=[POLICE, THIEF], required=True)
+    peer.add_argument("--role", choices=[POLICE, THIEF], default=None,
+                      help="defaults to this repo's ROLE marker if present")
     peer.add_argument("--config-dir", default=None)
     peer.add_argument("--no-gui", action="store_true")
     peer.add_argument("--seed", type=int, default=None)

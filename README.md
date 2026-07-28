@@ -12,8 +12,10 @@ Honesty is enforced by mathematics: every step is sealed with **SHA-256 commit �
 reveal → mutual audit**; any tampering is a technical loss, no appeal.
 
 **Team `ahk-yosi`** — Yosef Shanaa (`213314859`) · Ahmad Kaiss (`325811255`).
-**Sister repositories** (submission split, book rule #49): police repo `<link on split>` ·
-thief repo `<link on split>` — both built from this codebase, role selected by `/config`.
+**Sister repositories** (submission split, book rule #49): police repo
+<https://github.com/yosefshanaa/p2p-police-agent> · thief repo
+<https://github.com/yosefshanaa/p2p-thief-agent> — both published from this codebase by
+`scripts/sync_repos.py`; each carries a `ROLE` marker that sets its default `peer` role.
 
 ---
 

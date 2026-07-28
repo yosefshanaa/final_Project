@@ -150,3 +150,16 @@ def load_rate_limits(config_dir: Path, service: str = "gmail") -> dict[str, Any]
         raise ValueError(f"rate_limits.json version {version!r} incompatible (need 1.x)")
     services = raw.get("services", {})
     return services.get(service) or services.get("default") or {}
+
+
+def repo_default_role(root: Path = Path()) -> str | None:
+    """Role marker written by the submission split (scripts/sync_repos.py).
+
+    Each published repo carries a one-line ROLE file so `peer` runs with the
+    right role by default; the workspace has none, so --role stays explicit.
+    """
+    path = root / "ROLE"
+    if not path.exists():
+        return None
+    role = path.read_text(encoding="utf-8").strip()
+    return role if role in ("police", "thief") else None

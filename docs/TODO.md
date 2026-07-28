@@ -8,7 +8,7 @@ Legend: `[ ]` todo · `[~]` in progress · `[x]` done.
 - [x] Create workspace repo + `uv init` (Python 3.13), Ruff, pytest, coverage gate ≥85%, file-length lint
 - [ ] Create the two GitHub repos `p2p-police-agent` / `p2p-thief-agent` (private, shared with `rmisegal@gmail.com`) — or public; decide with partner
 - [x] `.gitignore` **first commit**: `credentials.json`, `token.json`, `.env`, `*.pem`, `*.key`, `logs/`, `results/`
-- [ ] Two-repo sync script (workspace → both repos, secrets excluded)
+- [x] Two-repo sync script `scripts/sync_repos.py` (tracked-files-only mirror → both repos, ROLE marker = per-repo `peer` default, README role banner + sister link, baked-in secrets-history check; config in `config/repos.toml`)
 - [x] CI (lint + tests) on both repos
 - [x] Copy this docs set (PRD, PRD/, PLAN, TODO, GAP_ANALYSIS) into both repos (mandatory content, rule #50)
 - [ ] Choose 8-char group code (no spaces) with partner; record here: `________`

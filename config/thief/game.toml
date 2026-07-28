@@ -5,7 +5,7 @@ group_name = "ahk-yosi"
 group_id = "ahk-yosi"
 sub_game_number = 1
 members = ["213314859", "325811255"]
-repos = { cop = "https://github.com/yosefshanaa/final_Project", thief = "https://github.com/yosefshanaa/final_Project" }
+repos = { cop = "https://github.com/yosefshanaa/p2p-police-agent", thief = "https://github.com/yosefshanaa/p2p-thief-agent" }
 
 [network]
 my_port = 8801                                # MY FastMCP server port (thief convention)

@@ -22,8 +22,11 @@ two fully separate processes with separate `/config/police` and `/config/thief` 
 forbids the two repos sharing *stateless* code heritage. **Decision:** develop one package
 (`p2p_pursuit`) where role is pure config; publish to **two self-contained repos**
 (`p2p-police-agent`, `p2p-thief-agent`) via a scripted sync (no submodules — the grader must see
-complete standalone repos). Each repo carries only its role's config dir + role-specific brain
-emphasis, full docs set, own CI. The zero-shared-state rule (#1–2) is a **runtime** invariant:
+complete standalone repos). Each repo carries the full docs set and its own CI.
+*Amended at split time:* both repos ship **both** config dirs — the test suite and `sim` load
+`config/police` + `config/thief`, and CI must stay green in each repo standalone; the per-repo
+role identity is instead a one-line `ROLE` marker (written by `scripts/sync_repos.py`) that
+`peer` uses as its `--role` default. The zero-shared-state rule (#1–2) is a **runtime** invariant:
 no module holds live state accessible to both processes; enforced by design + a test that scans
 for shared mutable module-level state.
 
