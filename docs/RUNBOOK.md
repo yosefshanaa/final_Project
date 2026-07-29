@@ -46,19 +46,78 @@ uv run p2p-pursuit smoke https://their-tunnel.ngrok-free.app/mcp
 uv run p2p-pursuit peer --role thief --counted --prior-counted 1
 ```
 
-## 3b. Interop with reference-derived opponents
+## 3b. Interop with reference-derived opponents — built and proven
 
-The lecturer's example repo exposes a different tool surface — `negotiate`, `receive_turn`
-(one message per turn), `submit_audit`, `receive_control` — while ours mirrors the book's
-four-phase figure: `handshake`, `receive_commit` → `receive_reveal` → `receive_event`,
-`audit_exchange` (+ `get_status`, `health_check`). The *cryptographic content* is identical
-(commit = SHA-256 of the sealed record, nonce withheld until the audit — confirmed in the
-reference's `protocol.py`), so this is a naming/framing difference only. The wire contract is
-pair-negotiated (book: the constitution is set "in negotiation between each pair of teams"):
-agree during warm-ups which surface the match uses; adapting is a thin transport-level shim on
-either side (`infra/mcp_client.py` isolates every outbound call; the service facade isolates
-every inbound one). Do this in an **uncounted warm-up first** — never discover a contract
-mismatch inside a counted match.
+**Run this first against any new opponent:**
+
+```bash
+uv run p2p-pursuit smoke <their-url>     # prints dialect=native|reference|unknown
+```
+
+The probe lists the opponent's MCP tools and names the dialect, so the wire contract is a
+warm-up fact instead of a mid-match surprise. (Liveness comes from the tool listing, not from
+our `health_check`: a reference peer does not serve one and would otherwise read as dead.)
+
+To play a reference-derived peer, set **one** switch in `config/<role>/game.toml`:
+
+```toml
+[interop]
+dialect = "reference"     # native (default) | reference
+```
+
+That turns on the whole adaptation: their tool names inbound *and* outbound, their message
+framing, and their commit formula.
+
+### The four differences that actually matter
+
+An earlier draft of this runbook claimed the cryptographic content was "identical" and only the
+names differed. **That was wrong**, and reading their source proved it:
+
+| # | Difference | Consequence |
+|---|---|---|
+| 1 | **Tool surface** — `negotiate` / `receive_turn` / `submit_audit` / `receive_control` vs our four-phase set | naming only; adapted in `infra/interop_codec.py` |
+| 2 | **Framing** — every tool of theirs returns `{"ok": true}` and the *reply arrives as a separate push* into our server; ours is request/response | needs an inbox, not a rename — `infra/interop_bridge.py` |
+| 3 | **Commit formula** — ours hashes the record with the nonce *inside* it; theirs hashes `canonical(payload)\|nonce` | **neither side can verify the other at all** until one adopts the other's digest |
+| 4 | **Sealing coverage** — their `claim_response` and `win_claim` ride as *plain unsealed fields*; ours are cryptographically bound (rule #21) | we act on them but record them as unsealed (`peer/unsealed_events.py`) |
+
+Difference 3 is the one that decides whether a match can produce a mutual `Verified OK`. Their
+`audit_records` re-verifies hash binding only — it does not re-derive legality from their record
+shape — so sealing our own records with **their** digest and revealing them in their
+`{payload, nonce, commit}` envelope is enough for an *unmodified* reference peer to verify us.
+`[interop] dialect = "reference"` does exactly that; `commit_dialect` is written into every log
+so replays stay verifiable afterwards.
+
+### Warm-up result — executed 2026-07-29 (uncounted)
+
+Our peer (police) played a full 35-step sub-game against an **unmodified** reference peer
+(thief, `--stub-llm`) on localhost. Both sides completed and **agreed the outcome**:
+
+| Side | Verdict | Score |
+|---|---|---|
+| Reference peer's audit of **our** log | `log_verified: true`, `tampered: false` | thief 10 |
+| Our audit of **their** log | `Verified OK` | police 5 |
+
+Two real defects surfaced, both now fixed and covered by
+`tests/integration/test_interop_bridge.py`:
+
+1. **Their reporting crashed after a completed game** because our identity payload omitted
+   `mcp_servers` / `llm_model` / `spec`, which their `group_block` indexes directly. A warm-up
+   that "played fine" would still have produced no report from them.
+2. **Our replay viewer stamped a clean interop match `TAMPERED`** — it re-hashed their
+   `{payload, nonce, commit}` envelopes as if they were our sealed records. It now verifies
+   their envelope on their terms and renders both sides' moves.
+
+### What interop still cannot give you
+
+Our audit of a reference peer checks hash binding, that **every commitment we witnessed live is
+actually revealed** (their own audit does not check this), and trajectory continuity. It does
+**not** re-derive scent honesty or barrier quota from their record shape, and their protocol
+never exchanges a scent-model lock, so rule #23 cannot be mutually enforced in this dialect.
+Their peer also keeps its verdict of us to itself, so `mutual_agreement` in our result is
+`false` for an interop match — truthfully, since we never received their verdict.
+
+**Therefore: prefer the native dialect for counted matches** when the opponent will run our
+shim, and use reference dialect when they will not. Either way, warm up uncounted first.
 
 ## 4. After the match
 
