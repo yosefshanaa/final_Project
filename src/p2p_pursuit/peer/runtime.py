@@ -34,7 +34,10 @@ class PeerRuntime:
     def __init__(self, role: str, config_dir: Path, *, out_dir: Path = Path("results"),
                  seed: int | None = None, counted: bool = False,
                  prior_counted_games: int = 0, num_games: int | None = None) -> None:
-        self.role, self.counted = role, counted
+        # `role` is this peer's NATURAL role; engine.role is what it plays right
+        # now, which differs on even sub-games when roles alternate.
+        self.role = self.natural_role = role
+        self.counted = counted
         self.shared, self.peer = load_role(config_dir)
         talk = make_talk_provider(self.peer.trash_talk_provider, self.peer.llm_model,
                                   self.peer.llm_step_deadline_seconds,
@@ -134,6 +137,10 @@ class PeerRuntime:
 
     # -- one sub-game over the wire -----------------------------------------
     def play_sub_game(self, n: int) -> None:
+        from . import series_protocol
+
+        if not series_protocol.prepare_sub_game(self, n, _log):
+            return
         self.service.ensure_sub_game(n)
         engine = self.engine
         while engine.end is None:

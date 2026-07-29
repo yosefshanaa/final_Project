@@ -129,9 +129,24 @@ settle this — the sub-game count is a template placeholder in the spec and rol
 not specified — which makes it exactly the kind of pair-negotiated constitution item that must
 be agreed explicitly, like the wire dialect.
 
-**Therefore: warm up with `--games 2` at minimum, never `--games 1`.** Sub-game 2 is where
-series-level assumptions first surface. And settle two questions with every opponent before a
-counted match: *do we re-handshake per sub-game, and do roles alternate?*
+**Both are now supported**, off by default (our published repos are role-fixed), in
+`config/<role>/game.toml`:
+
+```toml
+[interop]
+dialect = "reference"
+alternate_roles = true          # natural role on odd sub-games, opposite on even
+handshake_per_sub_game = true   # re-negotiate before every sub-game
+```
+
+Verified live on 2026-07-30 against the unmodified reference peer with `--games 2`: sub-game 1
+played us as police (their thief survived 35), sub-game 2 logged
+`playing as thief (alternating)` and ran to a capture. Both sub-games completed — the same
+pairing died at sub-game 2 before this.
+
+**Warm up with `--games 2` at minimum, never `--games 1`.** Sub-game 2 is where series-level
+assumptions first surface. And settle two questions with every opponent: *do we re-handshake
+per sub-game, and do roles alternate?*
 
 ### What interop still cannot give you
 

@@ -73,6 +73,29 @@ fast, wander is slow; juke only when chased. (2) Claim frequency is an informati
 free tempo — 0.15 beat 0.10 on fresh seeds 48:37. (3) Scent-trail velocity beats belief-peak
 velocity as an interception signal (the belief peak jitters under hint noise).
 
+### Where v4 stands against a *foreign* brain (the honest gap)
+
+The matrix above is self-play: v4 against our own frozen lineage. Measured against the
+lecturer's reference implementation over single sub-games on localhost:
+
+| Pairing | v3 | v4 |
+|---|---|---|
+| our thief vs their police | 5/5 survived | 5/5 survived |
+| our police vs their thief | 0/5 captures | **0/5 captures** |
+
+So the police gains — real and repeatable against our own thief lineage — **do not transfer to
+their evader**. That is the open question for the next iteration, and it deserves a hypothesis
+rather than more tuning: our interception reads the freshest cell of the served scent field, and
+their scent model decays *subtractively* with a linear-Chebyshev falloff where ours decays
+multiplicatively with the book's figure-4 kernel. A velocity estimator tuned on one field shape
+need not be sharp on the other. Worth testing before assuming the pursuit doctrine itself is at
+fault.
+
+Also worth noting for the league: over ten completed external matches, every single one was won
+by whichever side played thief. With role alternation over six sub-games, a series in which
+nobody captures scores 45–45 — a tie. **Capture ability as police is the only source of edge**,
+which is why it is where the remaining effort belongs.
+
 ### v4 negative results — kept on the record because they cost real effort
 
 4. **Barriers are a tempo trap on this board, and the quota is a red herring.** The book grants
