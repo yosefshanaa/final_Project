@@ -61,15 +61,43 @@ class PeerRuntime:
             on_attempt=self.watchdog.beat)
         self.sub_results: list[dict[str, Any]] = []
         self.link: Any = None
+        self.bridge: Any = None
 
     # -- lifecycle ----------------------------------------------------------
+    def make_bridge(self, link: Any) -> Any:
+        """Interop matches only: the translator that lets a reference peer play us."""
+        from ..infra.interop_bridge import ReferenceBridge
+        from ..infra.interop_codec import interop_identity, interop_terms
+        from ..shared import sysinfo
+
+        return ReferenceBridge(
+            self.service, link, grid_size=self.shared.grid_size,
+            terms=interop_terms(self.shared, num_games=self.num_games),
+            identity=interop_identity(
+                self.peer, mcp_url=f"http://0.0.0.0:{self.peer.my_port}/mcp",
+                spec=sysinfo.collect()))
+
     def start_server(self) -> None:
         serve_in_thread(self.service, host="0.0.0.0", port=self.peer.my_port,
-                        name=f"p2p-pursuit-{self.role}")
-        _log(f"[{self.role}] FastMCP server on 0.0.0.0:{self.peer.my_port}")
+                        name=f"p2p-pursuit-{self.role}", bridge=self.bridge)
+        _log(f"[{self.role}] FastMCP server on 0.0.0.0:{self.peer.my_port}"
+             f"{' (+reference dialect)' if self.bridge else ''}")
 
-    def connect(self, link: Any) -> bool:
-        self.link = link
+    def attach(self, link: Any) -> Any:
+        """Bind the outbound link, wrapping it in the interop bridge when this
+        match is played in the reference dialect. Run before ``start_server``,
+        so the server also answers the opponent's tool names."""
+        if self.peer.interop_dialect == "reference":
+            self.bridge = self.make_bridge(link)
+            self.link = self.bridge
+        else:
+            self.link = link
+        return self.link
+
+    def connect(self, link: Any = None) -> bool:
+        if link is not None or self.link is None:
+            self.attach(link)
+        link = self.link
         if not wait_until_up(link):
             _log(f"[{self.role}] opponent never came up at {self.peer.opponent_url}")
             return False

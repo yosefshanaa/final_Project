@@ -35,6 +35,9 @@ class EngineState:
                  seed: int | None = None) -> None:
         self.role, self.shared, self.peer = role, shared, peer
         self.other = THIEF if role == POLICE else POLICE
+        # Which digest composition seals our records (RUNBOOK 3b): negotiated
+        # per match, so an unmodified reference peer can audit us on its terms.
+        self.commit_dialect = peer.interop_dialect
         spec = peer.strategy.get("police_class" if role == POLICE else "thief_class")
         self.brain = brain or load_brain(spec, role)
         self.talk = talk

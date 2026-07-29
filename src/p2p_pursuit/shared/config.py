@@ -100,6 +100,8 @@ class PeerConfig:
     llm_step_deadline_seconds: int = 30
     email_recipient: str = ""
     email_mode: str = "draft"
+    #: Wire + digest contract for this match: "native" or "reference" (RUNBOOK 3b).
+    interop_dialect: str = "native"
 
 
 def load_shared(path: Path) -> SharedConfig:
@@ -128,6 +130,7 @@ def load_peer(path: Path) -> PeerConfig:
         llm_step_deadline_seconds=llm.get("step_deadline_seconds", 30),
         email_recipient=email.get("recipient", ""),
         email_mode=email.get("mode", "draft"),
+        interop_dialect=raw.get("interop", {}).get("dialect", "native"),
     )
 
 
