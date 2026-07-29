@@ -106,7 +106,7 @@ Legend: `[ ]` todo · `[~]` in progress · `[x]` done.
 - [ ] Annotated tag on both repos: `git tag -a v1.0-submission -m "Final submission: Police-Thief P2P, group <code>"` + push (#41)
 - [ ] Moodle: download form, fill (no field changes), save as PDF; **each member submits separately**; 8-char group code (#43–45)
 - [ ] Self-grade = code quality only, not match results (#55)
-- [ ] Final sweep of the book's pre-submission checklist (ch. 11.5) — every layer demoed end-to-end
+- [x] Final sweep of the book's pre-submission checklist (ch. 11.5 + the ch. 11.6 submission list) — mapped item-by-item to evidence in [`SUBMISSION_CHECKLIST.md`](SUBMISSION_CHECKLIST.md) (2026-07-29). Layers 1–5 green; #6 (both-sides Gmail report) and #7 (tag) wait on a counted match by design; #8 needs opposing teams
 
 ## External inputs needed
 | Item | Owner | Status |
