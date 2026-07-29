@@ -107,6 +107,32 @@ Two real defects surfaced, both now fixed and covered by
    `{payload, nonce, commit}` envelopes as if they were our sealed records. It now verifies
    their envelope on their terms and renders both sides' moves.
 
+### ⚠️ A one-sub-game warm-up hides two series-level mismatches
+
+The warm-up above played **one** sub-game — and that is precisely the configuration in which two
+match-voiding differences are invisible. Running the same pairing with `--games 2` reproduces
+both (2026-07-30):
+
+1. **They re-negotiate before every sub-game; we handshake once per series.** Their series
+   rebuilds a fresh `PeerRuntime` per sub-game and calls `negotiate` again. Our peer completes
+   one handshake at connect time and never sends a second agreement, so their peer dies at
+   sub-game 2 with `Opponent never sent its agreement`, while ours waits out its turn timeout.
+   **Observed:** sub-game 1 finished normally (`survival`, audit `Verified OK`); sub-game 2
+   produced no outcome at all.
+2. **They alternate roles across sub-games; we hold one role for the series.** Their
+   `sdk/series.py` `role_for()` plays the config-natural role on odd sub-games and the opposite
+   on even ones. Our `--role` is fixed for the whole run, so from sub-game 2 both peers would
+   claim the same role (our bridge's role-collision guard turns that into a technical loss).
+
+A counted match is **six** sub-games, so either difference alone voids it. The book does not
+settle this — the sub-game count is a template placeholder in the spec and role alternation is
+not specified — which makes it exactly the kind of pair-negotiated constitution item that must
+be agreed explicitly, like the wire dialect.
+
+**Therefore: warm up with `--games 2` at minimum, never `--games 1`.** Sub-game 2 is where
+series-level assumptions first surface. And settle two questions with every opponent before a
+counted match: *do we re-handshake per sub-game, and do roles alternate?*
+
 ### What interop still cannot give you
 
 Our audit of a reference peer checks hash binding, that **every commitment we witnessed live is
