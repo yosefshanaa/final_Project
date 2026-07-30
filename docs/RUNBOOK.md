@@ -177,9 +177,14 @@ Read before scheduling, because it changes match-day choices:
   reports — so a false declaration is detectable and disqualifies the team that made it.
 - **Computational fairness cuts the score advantage of heavy compute** and rewards efficient
   algorithms on modest machines: the book's words are that the league rewards "wisdom in
-  development, not raw compute". **Run counted matches with `[trash_talk] provider = "template"`**
-  (0 tokens, no network inside the turn). Our moves are pure Python either way, so LLM banter
-  buys nothing here and reports token spend against us.
+  development, not raw compute".
+- **But the LLM is expected to be used, judiciously.** The lecturer's own guidance is that the
+  game "was designed so it can be played without any LLM at all — obviously the hope is that you
+  make *judicious* use of the LLM". So the answer is neither zero tokens nor a call every step:
+  run counted matches with `provider = "openai"` and **`every_n_steps = 3`**, which keeps the
+  banter genuinely LLM-authored while cutting ~420 calls per series to ~140 (about ten minutes
+  and two-thirds of the tokens saved) with no strategic loss — moves are pure Python regardless
+  (rule #25). That is the defensible reading of both constraints at once.
 
 Practical consequence: since capture is hard (STRATEGY.md §6) and an all-survival series ties
 45–45 under role alternation, the points come from (a) never losing a sub-game — our thief is

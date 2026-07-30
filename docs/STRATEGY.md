@@ -119,12 +119,35 @@ Three experiments (2026-07-30) that together explain the 0/5, all reverted:
    adjacent to the pursuer rarely cuts 2+ cells from a ~40-cell region, and a wall that actually
    halves a 7×7 costs ~7 placements plus travel. Implemented, measured, removed.
 
-**Open question, and the highest-value next investigation.** The reference's entire evasion policy
-is three lines — maximise distance from the believed cop cell, tie-break on unvisited cells — and
-our police catches that policy **36/36 (100%)** when it is ported into our engine. Yet their real
-peer is never caught. Something about the live protocol's information timing is not reproduced by
-our local sim, which means self-play tuning may be systematically optimistic. Establishing that
-before further tuning is worth more than any parameter sweep.
+### Resolved: it was never the timing — it is the *evader's* estimate of the pursuer
+
+The reference's entire evasion policy is three lines (maximise distance from the believed cop
+cell, tie-break on unvisited cells), our police catches that policy **36/36** when ported into our
+engine, yet their real peer is never caught. Measuring both sides' estimates against ground truth
+settles why:
+
+| Estimator | Mean error | Exact |
+|---|---|---|
+| our police's belief of **their** thief (live) | **0.47** | 71% |
+| our police's belief of **our** thief (sim) | **2.34** | 0% |
+| our thief's belief of the police (sim) | 1.85 | 26% |
+
+Two conclusions, and the first is counter-intuitive: our police has *better* information against
+their thief (0.47) and captures **0%**, while it has *worse* information against ours (2.34) and
+captures **41.7%**. Tracking is not the binding constraint — **the evader's estimate of the
+pursuer is.** Their thief flees a well-informed estimate and is uncatchable; a distance-maximiser
+fed our diffuse posterior (1.85 off, exact only 26% of the time) flees a phantom and walks into
+the pursuer, which is exactly what 36/36 measures.
+
+The second is that **our concealment is our real edge**: an opponent modelling us is 2.34 cells
+off where we are 0.47 off modelling them, because we serve scent pre-emission and they serve it
+post-deposit. That asymmetry, not our pursuit, is why we have never lost a sub-game externally.
+
+Acting on it: the thief now blends the pursuer's trail cell into its distance term (`W_TRAIL`).
+Honest effect size — on the tuning seeds it cut captures 41.7% → 27.8%, but that value was chosen
+as the best of five, and on **50 untouched hold-out seeds** it is 30.0% → **26.0%**: a consistent
+direction on both sets and a sound mechanism, but only two games in fifty, so not statistically
+established. Shipped on the mechanism, not the number.
 
 ### v4 negative results — kept on the record because they cost real effort
 
