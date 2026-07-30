@@ -160,6 +160,33 @@ Their peer also keeps its verdict of us to itself, so `mutual_agreement` in our 
 **Therefore: prefer the native dialect for counted matches** when the opponent will run our
 shim, and use reference dialect when they will not. Either way, warm up uncounted first.
 
+## 3c. How the league actually scores you (book §9.2.1 + §9.2.2, pp. 86–87)
+
+Read before scheduling, because it changes match-day choices:
+
+- **One counted game per opponent, full stop.** Once both teams agree the result and send their
+  reports, "the encounter with that opponent is sealed" — you may not replay them for points.
+  So each counted match is a single, unrepeatable shot: warm up first, every time.
+- **Warm-ups are explicitly encouraged** and do not count. There is no downside to running two
+  or three against the same team before the counted one.
+- **The diversity incentive rewards a *victory* over an opponent you have not played** — not
+  merely playing them. A tie earns the tie score, not the bonus. More distinct opponents means
+  more chances at the bonus, capped at the per-team maximum.
+- **Declare your counted-game count truthfully at the start of every match.** The weighting is
+  computed from the mutual declarations, and the lecturer independently receives both teams'
+  reports — so a false declaration is detectable and disqualifies the team that made it.
+- **Computational fairness cuts the score advantage of heavy compute** and rewards efficient
+  algorithms on modest machines: the book's words are that the league rewards "wisdom in
+  development, not raw compute". **Run counted matches with `[trash_talk] provider = "template"`**
+  (0 tokens, no network inside the turn). Our moves are pure Python either way, so LLM banter
+  buys nothing here and reports token spend against us.
+
+Practical consequence: since capture is hard (STRATEGY.md §6) and an all-survival series ties
+45–45 under role alternation, the points come from (a) never losing a sub-game — our thief is
+uncaptured in every external match to date — (b) never taking a technical loss, which is what
+the protocol hardening protects, and (c) beating the weaker half of the field, where our police
+converts at ~40% against a competent-but-not-perfect evader.
+
 ## 4. After the match
 
 Each side automatically: audits the opponent's sealed log, writes the four artifacts under

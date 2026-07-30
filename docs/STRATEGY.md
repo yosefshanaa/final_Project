@@ -96,6 +96,36 @@ by whichever side played thief. With role alternation over six sub-games, a seri
 nobody captures scores 45–45 — a tie. **Capture ability as police is the only source of edge**,
 which is why it is where the remaining effort belongs.
 
+### The capture bound, and why the police cannot simply be tuned harder
+
+Three experiments (2026-07-30) that together explain the 0/5, all reverted:
+
+7. **Their scent field names their exact cell — and using it directly is a 41.7-point
+   regression.** Instrumenting a live match against ground truth from their own revealed audit
+   log: their served field's freshest cell was their true position **34/34 turns, mean error
+   0.00**, while our Bayesian posterior averaged 0.47 off. Targeting the raw cell instead of the
+   posterior nonetheless dropped our police from 41.7% to **0%** against our own thief, and
+   changed nothing externally. The reason is a serving convention: we serve *pre-emission*
+   (interpretation #4), so our own freshest cell is one step stale, and the belief map's job is
+   precisely to diffuse that lag forward. **The posterior is not decoration** — a raw sensor
+   reading is not an upgrade over a correctly specified filter.
+8. **A perfect position estimate still does not capture.** With the exact cell known every turn,
+   the police went **0/5** against the reference evader. That is the classic pursuit-evasion
+   result: one equal-speed pursuer cannot capture on open ground however well it tracks. Capture
+   requires removing space.
+9. **But 35 steps cannot fund a fence.** A cornering doctrine (`walling.py`: spend barriers to
+   cut the evader's BFS-reachable region, gated on knowing the exact cell — the condition the
+   earlier area-denial attempt lacked) fired only ~2 times per game, because a single barrier
+   adjacent to the pursuer rarely cuts 2+ cells from a ~40-cell region, and a wall that actually
+   halves a 7×7 costs ~7 placements plus travel. Implemented, measured, removed.
+
+**Open question, and the highest-value next investigation.** The reference's entire evasion policy
+is three lines — maximise distance from the believed cop cell, tie-break on unvisited cells — and
+our police catches that policy **36/36 (100%)** when it is ported into our engine. Yet their real
+peer is never caught. Something about the live protocol's information timing is not reproduced by
+our local sim, which means self-play tuning may be systematically optimistic. Establishing that
+before further tuning is worth more than any parameter sweep.
+
 ### v4 negative results — kept on the record because they cost real effort
 
 4. **Barriers are a tempo trap on this board, and the quota is a red herring.** The book grants
