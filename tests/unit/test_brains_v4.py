@@ -242,3 +242,30 @@ def test_police_does_not_claim_on_a_stale_trail():
     package = engine.build_own_step()
     assert "commit" in package, "an unsubstantiated enclosure must not be claimed"
     assert engine.end is None
+
+
+def test_the_squeeze_stops_one_door_short_when_enclosure_is_not_agreed():
+    """Measured live 2026-08-01 against the reference peer: we barred (6,5) and
+    (5,6), their thief sat in (6,6) for 27 turns, and our police finished at
+    (6,4) - outside the wall it had built. Survival, 5 points where 20 was on
+    offer. Sealing the last door only wins if the opponent honours book 3.4.
+    """
+    from p2p_pursuit.strategy.squeeze import squeeze_play
+
+    board = Board(SIZE, {(6, 5)})          # corner (6,6) already down to one exit
+    corner, beside = (6, 6), (5, 6)
+    assert squeeze_play(board, beside, corner, quota_left=10, reserve=2,
+                        claim_enclosure=True) == beside, "with the rule agreed, seal it"
+    assert squeeze_play(board, beside, corner, quota_left=10, reserve=2,
+                        claim_enclosure=False) is None, "without it, leave the door open"
+
+
+def test_the_view_carries_the_negotiated_enclosure_rule():
+    """The flag is useless if it stops at the config: the brain decides on the
+    view, so the view is what has to know."""
+    from p2p_pursuit.peer.turn_engine import TurnEngine
+    from tests.conftest import make_peer, make_shared
+
+    engine = TurnEngine("police", make_shared(), make_peer("police", claim_enclosure=False))
+    assert engine._view().claim_enclosure is False
+    assert make_view("police", (3, 3)).claim_enclosure is True, "default stays our doctrine"
