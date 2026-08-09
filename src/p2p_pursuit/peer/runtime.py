@@ -73,6 +73,9 @@ class PeerRuntime:
             max_retries=rate.get("max_retries", 3),
             backoff_sec=rate.get("retry_backoff_sec", 5),
             on_attempt=self.watchdog.beat)
+        #: Where this peer joins the series - 1 unless the opponent is already
+        #: further on; see `_join_at_their_index`.
+        self.start_index = 1
         self.sub_results: list[dict[str, Any]] = []
         self.link: Any = None
         self.bridge: Any = None
@@ -120,6 +123,7 @@ class PeerRuntime:
         theirs = self.deadline.call(link.handshake, self.service.my_handshake)
         self.service.their_handshake = theirs
         self._adopt_reference_ids(theirs)
+        self._join_at_their_index(theirs)
         problems = negotiation.check_compatibility(
             self.service.my_handshake, theirs, num_games=self.num_games)
         if problems:
@@ -128,6 +132,30 @@ class PeerRuntime:
             return False
         runtime_reports.write_declaration(self, theirs)
         return True
+
+    def _join_at_their_index(self, theirs: dict[str, Any]) -> None:
+        """Start the series where the opponent already is, not where we assume.
+
+        Two peers that both advance on failure and both insist on their own index
+        cannot resynchronise by restarting: whoever restarts is behind again by
+        its own boot time, and the gap simply changes sign. Measured live against
+        uoh-sqak 2026-08-10 - their peer moved 1 -> 3 in the two minutes ours took
+        to come up, twice in a row.
+
+        So a peer joining a series joins it where the other side is. Only forward:
+        an index we have already settled is not replayable, and pulling the other
+        peer backwards is what deadlocked both of us earlier tonight.
+        """
+        declared = (theirs or {}).get("sub_game_number")
+        if not isinstance(declared, int) or declared <= self.start_index:
+            return
+        if declared > self.num_games:
+            _log(f"[{self.role}] opponent is on sub-game {declared}, past this "
+                 f"series' {self.num_games} - refusing to join a finished series")
+            return
+        _log(f"[{self.role}] opponent is on sub-game {declared}; joining there "
+             f"instead of {self.start_index} (they cannot replay what they settled)")
+        self.start_index = declared
 
     def _adopt_reference_ids(self, theirs: dict[str, Any]) -> None:
         """Re-derive the game ids the way a reference-family peer does.
@@ -226,7 +254,7 @@ class PeerRuntime:
     def run_series(self) -> dict[str, Any]:
         self.watchdog.start()
         try:
-            for n in range(1, self.num_games + 1):
+            for n in range(self.start_index, self.num_games + 1):
                 self.play_sub_game(n)
                 self.sub_results.append(runtime_reports.finish_sub_game(self, n, _log))
         finally:
