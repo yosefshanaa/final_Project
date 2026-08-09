@@ -71,7 +71,7 @@ def test_only_the_five_row_keys_reach_the_signature() -> None:
     lean = {"game_id": "a-vs-b",
             "aggregate": {"total_score": {"a": 45}, "sub_games_won": {"a": 0},
                           "ties": 6, "winner_group": None, "series_tie": True},
-            "sub_games": [{"sub_game_number": 1, "roles": {"a": "cop"},
+            "sub_games": [{"sub_game_number": 1, "roles": {"a": "police"},
                            "result": "survival", "winner_group": "b",
                            "score": {"a": 5, "b": 10}}]}
     noisy = json.loads(json.dumps(lean))
@@ -90,7 +90,7 @@ def test_signed_row_follows_the_role_we_actually_played() -> None:
     as_cop = signed_row_fields(_row(1, "capture", "police", 20, 0),
                                my_group="ahk-yosi", their_group="uoh-sqak",
                                my_role="police")
-    assert as_cop["roles"] == {"ahk-yosi": "cop", "uoh-sqak": "thief"}
+    assert as_cop["roles"] == {"ahk-yosi": "police", "uoh-sqak": "thief"}
     assert as_cop["score"] == {"ahk-yosi": 20, "uoh-sqak": 0}
     assert as_cop["winner_group"] == "ahk-yosi"
 
@@ -98,7 +98,7 @@ def test_signed_row_follows_the_role_we_actually_played() -> None:
     as_thief = signed_row_fields(_row(2, "capture", "police", 20, 0),
                                  my_group="ahk-yosi", their_group="uoh-sqak",
                                  my_role="thief")
-    assert as_thief["roles"] == {"ahk-yosi": "thief", "uoh-sqak": "cop"}
+    assert as_thief["roles"] == {"ahk-yosi": "thief", "uoh-sqak": "police"}
     assert as_thief["score"] == {"ahk-yosi": 0, "uoh-sqak": 20}
     assert as_thief["winner_group"] == "uoh-sqak"
 

@@ -28,11 +28,19 @@ from ..domain.rules import POLICE, THIEF
 __all__ = ["AGGREGATE_KEYS", "SUB_GAME_KEYS", "mutual_signature", "signature_document",
            "signed_aggregate", "signed_row_fields"]
 
-#: Their spelling of the pursuer's role. Ours is "police" throughout; theirs is
-#: "cop" (their `cop_start`, their `repos.cop`). `roles` is *inside* the
-#: signature, so this is not cosmetic - one spelling apiece means two teams that
-#: agree on everything still hash differently.
-THEIR_ROLE_NAME = {POLICE: "cop", THIEF: "thief"}
+#: The pursuer's spelling inside `roles`, which is a *signed* key: one spelling
+#: apiece means two teams that agree on everything still hash differently, on
+#: every row. It is **"police"**, not "cop" - confirmed by uoh-sqak 2026-08-09.
+#: "cop" survives only in `cop_start` and `repos.cop`, both of which are terms
+#: and links rather than signed row values, which is exactly what makes the trap
+#: invisible: the word is all over the protocol and never in this field.
+THEIR_ROLE_NAME = {POLICE: POLICE, THIEF: THIEF}
+
+#: Their `result` vocabulary. Only "capture" and "survival" score; everything
+#: else is 0-0 for both teams by construction on their side. Ours is the same
+#: set plus `technical_loss`, which has no meaning to them - so it is mapped to
+#: the closest term they *do* file rather than left to differ on a signed key.
+RESULT_ALIASES = {"technical_loss": "timeout"}
 
 #: The only per-row keys that reach the digest.
 SUB_GAME_KEYS = ("sub_game_number", "roles", "result", "winner_group", "score")
@@ -83,7 +91,7 @@ def signed_row_fields(row: dict[str, Any], *, my_group: str, their_group: str,
         "sub_game_number": row["index"],
         "roles": {my_group: THEIR_ROLE_NAME[my_role],
                   their_group: THEIR_ROLE_NAME[their_role]},
-        "result": row["ending"],
+        "result": RESULT_ALIASES.get(row["ending"], row["ending"]),
         "winner_group": winner_group,
         "score": {my_group: row[mine], their_group: row[mine_other]},
     }

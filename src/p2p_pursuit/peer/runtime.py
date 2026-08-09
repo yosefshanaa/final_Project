@@ -11,6 +11,7 @@ from __future__ import annotations
 import json
 import sys
 import time
+from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any
 
@@ -54,6 +55,8 @@ class PeerRuntime:
         self.game_uid = new_game_uid()
         self.game_id = make_game_id(self.peer.group_id or "us", "opponent")
         self._out_root = out_dir
+        #: Distinguishes two runs against the same opponent; see `_adopt_reference_ids`.
+        self._run_stamp = datetime.now(UTC).strftime("%Y%m%dT%H%M%S")
         self.out_dir = out_dir / f"{role}-{self.game_id}"
         handshake = negotiation.handshake_payload(
             self.shared, self.peer, role=role, game_id=self.game_id,
@@ -148,7 +151,13 @@ class PeerRuntime:
         terms = interop_terms(self.shared, num_games=self.num_games)
         self.game_id = reference_game_id(my_gid, their_gid)
         self.game_uid = reference_game_uid(terms, my_gid, their_gid)
-        self.out_dir = self._out_root / f"{self.role}-{self.game_id}"
+        # Their `game_id` is deterministic by design - the same two teams always
+        # derive the same string - so it cannot also name our output directory:
+        # a warm-up would overwrite the sealed logs of the counted match played
+        # against the same opponent, which are the one artifact we must be able
+        # to produce afterwards. Filenames keep the agreed id (Appendix F); only
+        # the containing directory is made unique.
+        self.out_dir = self._out_root / f"{self.role}-{self.game_id}-{self._run_stamp}"
         self.service.my_handshake["game_id"] = self.game_id
         self.service.my_handshake["game_uid"] = self.game_uid
         _log(f"[{self.role}] reference ids adopted: {self.game_id} / {self.game_uid}")
