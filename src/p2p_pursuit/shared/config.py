@@ -123,19 +123,38 @@ class PeerConfig:
     claim_enclosure: bool = True
 
 
-#: A *negotiated* term the opponent may propose differently per match. `setting`
-#: only flavours the landmarks in trash-talk hints, but a reference-derived peer
-#: compares the agreed terms for exact equality and refuses to play on any
-#: mismatch - so adopting theirs must not mean editing the committed
-#: constitution and risking that edit reaching a later match.
+#: *Negotiated* terms an opponent may propose differently per match. A
+#: reference-derived peer compares the agreed terms for exact equality and
+#: refuses to play on any mismatch, so adopting theirs must not mean editing the
+#: committed constitution and risking that edit reaching a later match. Each
+#: entry is (env var) -> (section, key, caster); `P2P_MAP_AREA` is the original
+#: and keeps its name.
 MAP_AREA_VAR = "P2P_MAP_AREA"
+NEGOTIABLE_TERM_VARS: dict[str, tuple[str, str, Any]] = {
+    MAP_AREA_VAR: ("world", "map_area", str),
+    # Book rule: a hint is <=15 words. A peer proposing a larger cap is agreeing
+    # a ceiling, not an instruction - we still clip our own hints to the book.
+    "P2P_HINT_MAX_WORDS": ("world", "hint_max_words", int),
+    # Their SmellField's dust floor, which we had modelled as a validation floor
+    # under a different value; same physics, so it is theirs to name.
+    "P2P_MIN_CENTER_INTENSITY": ("pheromones", "pheromone_min_center_intensity", float),
+    # `top_left` vs `top-left`: spelling only, but exact equality does not care.
+    "P2P_AXIS_ORIGIN_CORNER": ("board_and_agents", "axis_origin_corner", str),
+}
 
 
 def _shared_env_overrides(raw: dict[str, Any]) -> dict[str, Any]:
-    area = (os.environ.get(MAP_AREA_VAR) or "").strip()
-    if not area:
-        return raw
-    return {**raw, "world": {**raw.get("world", {}), "map_area": area}}
+    """Overlay per-opponent negotiated terms without touching the committed file."""
+    for var, (section, key, cast) in NEGOTIABLE_TERM_VARS.items():
+        value = (os.environ.get(var) or "").strip()
+        if not value:
+            continue
+        try:
+            parsed = cast(value)
+        except ValueError:  # a malformed override must not silently mean "default"
+            raise ValueError(f"{var}={value!r} is not a valid {cast.__name__}") from None
+        raw = {**raw, section: {**raw.get(section, {}), key: parsed}}
+    return raw
 
 
 def load_shared(path: Path) -> SharedConfig:

@@ -38,6 +38,7 @@ class PeerRuntime:
         # now, which differs on even sub-games when roles alternate.
         self.role = self.natural_role = role
         self.counted = counted
+        self.prior_counted_games = prior_counted_games
         self.shared, self.peer = load_role(config_dir)
         talk = make_talk_provider(self.peer.trash_talk_provider, self.peer.llm_model,
                                   self.peer.llm_step_deadline_seconds,
@@ -78,7 +79,8 @@ class PeerRuntime:
             terms=interop_terms(self.shared, num_games=self.num_games),
             identity=interop_identity(
                 self.peer, mcp_url=f"http://0.0.0.0:{self.peer.my_port}/mcp",
-                spec=sysinfo.collect()))
+                spec=sysinfo.collect(),
+                counted_games_played=self.prior_counted_games))
 
     def start_server(self) -> None:
         serve_in_thread(self.service, host="0.0.0.0", port=self.peer.my_port,
