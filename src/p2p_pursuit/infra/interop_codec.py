@@ -17,11 +17,14 @@ TypeError on their side: :func:`to_turn_message` emits exactly their fields.
 
 from __future__ import annotations
 
+import logging
 from datetime import UTC, datetime
 from typing import Any
 
 from ..domain.crypto import reference_commit, verify_reference_record
 from ..domain.rules import POLICE, THIEF
+
+log = logging.getLogger(__name__)
 
 Matrix = list[list[float]]
 
@@ -110,6 +113,33 @@ def interop_identity(peer: Any, *, mcp_url: str, spec: dict[str, Any],
     }
 
 
+def _log_agreement_gap(agreement: dict[str, Any], *, terms: dict[str, Any],
+                       signed: bool) -> None:
+    """Say exactly WHY an agreement failed, at the moment it fails.
+
+    Without this, a terms difference and a bad signature both surface later as
+    the same pair of downstream errors ("constitution mismatch" + "scent model
+    mismatch"), because the lock fields are simply absent - two messages naming
+    neither the field nor the real cause. A mismatch you cannot name costs a
+    turn timeout to diagnose; named, it costs a log line.
+    """
+    theirs = agreement.get("terms", {})
+    if theirs != terms:
+        keys = sorted(set(theirs) | set(terms))
+        diff = [f"{k}: ours={terms.get(k, '<absent>')!r} theirs={theirs.get(k, '<absent>')!r}"
+                for k in keys if theirs.get(k) != terms.get(k)]
+        log.warning("agreement TERMS differ from ours on %d field(s): %s",
+                    len(diff), "; ".join(diff))
+    if not signed:
+        log.warning("agreement SIGNATURE did not verify: their signature=%r over "
+                    "%d terms keys with nonce=%r",
+                    agreement.get("signature"), len(theirs), agreement.get("nonce"))
+    sub_game = agreement.get("sub_game_number")
+    if sub_game is not None:
+        log.info("agreement is for sub-game %s (identity %s)",
+                 sub_game, agreement.get("identity", {}).get("group_id"))
+
+
 def handshake_from_agreement(agreement: dict[str, Any], *, mine: dict[str, Any],
                              terms: dict[str, Any]) -> dict[str, Any]:
     """Their signed agreement, expressed as one of our handshake payloads.
@@ -126,6 +156,7 @@ def handshake_from_agreement(agreement: dict[str, Any], *, mine: dict[str, Any],
     identity = agreement.get("identity", {})
     signed = reference_commit(agreement.get("terms", {}),
                               agreement.get("nonce", "")) == agreement.get("signature")
+    _log_agreement_gap(agreement, terms=terms, signed=signed)
     payload: dict[str, Any] = {
         "kind": "handshake",
         "role": THIEF if mine.get("role") == POLICE else POLICE,

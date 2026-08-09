@@ -186,9 +186,13 @@ class PeerRuntime:
     def play_sub_game(self, n: int) -> None:
         from . import series_protocol
 
-        if not series_protocol.prepare_sub_game(self, n, _log):
-            return
+        # Role first (start_sub_game reads it), then reset onto this sub-game,
+        # and only then re-negotiate: a refusal must be recorded against clean
+        # state for THIS index, never against the previous sub-game's ending.
+        series_protocol.take_role(self, n, _log)
         self.service.ensure_sub_game(n)
+        if not series_protocol.rehandshake_if_needed(self, n, _log):
+            return
         engine = self.engine
         while engine.end is None:
             self.watchdog.beat()

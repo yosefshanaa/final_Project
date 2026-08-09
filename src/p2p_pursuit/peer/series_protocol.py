@@ -25,17 +25,33 @@ def role_for(natural: str, sub_game: int) -> str:
     return THIEF if natural == POLICE else POLICE
 
 
-def prepare_sub_game(rt: Any, n: int, log_fn: Any) -> bool:
-    """Swap sides and/or re-handshake before sub-game ``n``; False = cannot play."""
-    if rt.peer.alternate_roles:
-        role = role_for(rt.natural_role, n)
-        if role != rt.engine.role:
-            rt.engine.set_role(role)
-            rt.service.my_handshake["role"] = role
-            log_fn(f"[{rt.natural_role}] sub-game {n}: playing as {role} (alternating)")
-    if rt.peer.handshake_per_sub_game and n > 1:
-        return _rehandshake(rt, n, log_fn)
-    return True
+def take_role(rt: Any, n: int, log_fn: Any) -> None:
+    """Adopt the role sub-game ``n`` owes, before any state is built for it.
+
+    Must run before ``start_sub_game``, which reads the role to pick both
+    starting cells and the first mover.
+    """
+    if not rt.peer.alternate_roles:
+        return
+    role = role_for(rt.natural_role, n)
+    if role != rt.engine.role:
+        rt.engine.set_role(role)
+        rt.service.my_handshake["role"] = role
+        log_fn(f"[{rt.natural_role}] sub-game {n}: playing as {role} (alternating)")
+
+
+def rehandshake_if_needed(rt: Any, n: int, log_fn: Any) -> bool:
+    """Re-negotiate before sub-game ``n`` when the opponent expects it.
+
+    Runs *after* the engine has been reset onto ``n``: a refusal here has to
+    record a technical loss for THIS sub-game, and it can only do that against
+    freshly-started state. Refusing while the engine still holds sub-game n-1
+    files the previous sub-game's ending as this one's result - a capture we
+    never played, in a report the lecturer receives.
+    """
+    if not (rt.peer.handshake_per_sub_game and n > 1):
+        return True
+    return _rehandshake(rt, n, log_fn)
 
 
 def _rehandshake(rt: Any, n: int, log_fn: Any) -> bool:
