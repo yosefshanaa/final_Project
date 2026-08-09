@@ -23,8 +23,16 @@ from __future__ import annotations
 from typing import Any
 
 from ..domain.crypto import sha256_hex, spaced_bytes
+from ..domain.rules import POLICE, THIEF
 
-__all__ = ["AGGREGATE_KEYS", "SUB_GAME_KEYS", "mutual_signature", "signature_document"]
+__all__ = ["AGGREGATE_KEYS", "SUB_GAME_KEYS", "mutual_signature", "signature_document",
+           "signed_aggregate", "signed_row_fields"]
+
+#: Their spelling of the pursuer's role. Ours is "police" throughout; theirs is
+#: "cop" (their `cop_start`, their `repos.cop`). `roles` is *inside* the
+#: signature, so this is not cosmetic - one spelling apiece means two teams that
+#: agree on everything still hash differently.
+THEIR_ROLE_NAME = {POLICE: "cop", THIEF: "thief"}
 
 #: The only per-row keys that reach the digest.
 SUB_GAME_KEYS = ("sub_game_number", "roles", "result", "winner_group", "score")
@@ -56,3 +64,55 @@ def signature_document(result: dict[str, Any]) -> dict[str, Any]:
 def mutual_signature(result: dict[str, Any]) -> str:
     """The hex digest both teams must produce from their own artifact."""
     return sha256_hex(spaced_bytes(signature_document(result)))
+
+
+def signed_row_fields(row: dict[str, Any], *, my_group: str, their_group: str,
+                      my_role: str) -> dict[str, Any]:
+    """The five signed keys for one of our sub-game rows, keyed by group.
+
+    Our row is role-keyed (`cop_score` / `thief_score`) and names a *role* as the
+    winner. Under role alternation neither survives comparison between two teams:
+    "the police won" says nothing about which team that was on sub-game 4.
+    """
+    their_role = THIEF if my_role == POLICE else POLICE
+    mine, mine_other = ("cop_score", "thief_score") if my_role == POLICE \
+        else ("thief_score", "cop_score")
+    winner = row.get("winner")
+    winner_group = {my_role: my_group, their_role: their_group}.get(winner)
+    return {
+        "sub_game_number": row["index"],
+        "roles": {my_group: THEIR_ROLE_NAME[my_role],
+                  their_group: THEIR_ROLE_NAME[their_role]},
+        "result": row["ending"],
+        "winner_group": winner_group,
+        "score": {my_group: row[mine], their_group: row[mine_other]},
+    }
+
+
+def signed_aggregate(rows: list[dict[str, Any]], *, my_group: str,
+                     their_group: str) -> dict[str, Any]:
+    """Series totals over rows that already carry :func:`signed_row_fields`.
+
+    A sub-game with no winner counts as a tie, which is also how a technical
+    loss with no surviving winner reads - deliberately, since neither team may
+    claim it.
+    """
+    total = {my_group: 0, their_group: 0}
+    won = {my_group: 0, their_group: 0}
+    ties = 0
+    for row in rows:
+        for group, points in (row.get("score") or {}).items():
+            total[group] = total.get(group, 0) + points
+        winner = row.get("winner_group")
+        if winner is None:
+            ties += 1
+        else:
+            won[winner] = won.get(winner, 0) + 1
+    series_tie = total[my_group] == total[their_group]
+    return {
+        "total_score": total,
+        "sub_games_won": won,
+        "ties": ties,
+        "winner_group": None if series_tie else max(total, key=lambda g: total[g]),
+        "series_tie": series_tie,
+    }

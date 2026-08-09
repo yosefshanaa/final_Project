@@ -141,8 +141,9 @@ unmodified reference peer, and four of their facts differ from it in ways that m
 ## 2b. Match day — the whole configuration, no file edits
 
 Every negotiated term is an environment variable, so the committed constitution is never touched
-and nothing can ride into the next opponent's match. `hint_max_words` below assumes they hold at
-30; drop the line if they accept 15.
+and nothing can ride into the next opponent's match. The whole set is committed as
+`config/opponents/uoh-sqak.env`, including the sourcing one-liner for fish and bash.
+`hint_max_words` there assumes they hold at 30; drop that line if they accept 15.
 
 ```fish
 set -x P2P_OPPONENT_URL           https://THEIR-TUNNEL/mcp   # from them, match day
@@ -171,17 +172,28 @@ Severity: **A** blocks the handshake, **B** corrupts a filed artifact, **C** blo
 | 1 | A | `min_center_intensity` / `hint_max_words` / `axis_origin_corner` / `setting` differ; their `verify_peer` compares terms by exact dict equality | env-var overrides for the negotiable terms, following the existing `P2P_MAP_AREA` precedent — never edit the committed constitution | **done** (`NEGOTIABLE_TERM_VARS`) |
 | 2 | B | identity omits `counted_games_played`; we read theirs as `prior_counted_games` | send and read their spelling, both directions | **done** |
 | 3 | B | no step-0 `system_spec` record ⇒ our `github_commit` files as `unknown` on their side | seal one into the audit package in the reference dialect | **done** |
-| 4 | C | `game_id` has a timestamp and `"opponent"` placeholder; `game_uid` is random | adopt their derivation: `"<min-gid>-vs-<max-gid>"`, uid = UUID over `canonical(terms)\|lo\|hi` | functions built + tested; **not yet bound into the runtime** |
-| 5 | C | mutual signature not implemented at all (5 keys per row, **default** `json.dumps` separators) | `report/mutual_signature.py` | projection + digest built and tested; **result artifact not yet reshaped** (`aggregate`, `links`, `diversity_reward_applied`, `games_played_including_this`) |
+| 4 | C | `game_id` has a timestamp and `"opponent"` placeholder; `game_uid` is random | adopt their derivation: `"<min-gid>-vs-<max-gid>"`, uid = UUID over `canonical(terms)\|lo\|hi` | **done** — rebound at handshake, reference dialect only |
+| 5 | C | mutual signature not implemented at all (5 keys per row, **default** `json.dumps` separators) | `report/mutual_signature.py`, plus `aggregate` / `links` / `diversity_reward_applied` / `games_played_including_this` on the result | **done** — see the four open spellings below |
 | 6 | D | our enclosure is cop-claimed; theirs is thief-announced via `claim_response` | `claim_enclosure=false`; map our thief's forced confession onto their `claim_response {caught: true}` + "You got me." | **done** |
 | 7 | D | our `win_claim` carries `{"type": "survival_claim"}`; they document `{"type": "survival"}` | normalise on the reference path (question also asked of them) | **done** |
 | 8 | D | agreement omits `sub_game_number`, which they use to detect index drift | add it outside `terms`, so the signature is undisturbed | **done** |
 
-**4 and 5 are deliberately unbound.** Their aggregate is keyed by *group id*, ours by *role* —
-which under role alternation are not the same shape — and they told us to diff against their
-interop kit before binding. That kit did not arrive with the brief, so binding now would mean
-implementing our reading of their prose and calling it agreement. The primitives are built,
-match their published golden vector, and are ready to wire the moment the kit lands.
+### Four spellings to verify against their kit before binding anything counted
+
+All eight gaps are now closed in code, but their §7 does not pin every *value* inside the signed
+document — and the signature is a byte comparison, so a wrong-but-reasonable choice fails silently
+while looking correct on both screens. These are our reading of their prose; each is a one-line
+change in `report/mutual_signature.py` once their kit arrives:
+
+| Field | Our choice | Why it could be wrong |
+|---|---|---|
+| `roles` values | `"cop"` / `"thief"` | They write `cop_start` and `repos.cop`, so `cop` is their spelling — but their §3 `sender` field says `"thief"` and never shows the pursuer's. |
+| `result` values | our endings verbatim (`capture`, `survival`, `technical_loss`) | Their §7 names the key and never its vocabulary. |
+| `links` shape | `{declaration, configs[], logs[], github{}}` | They specify the *contents* ("sibling filenames … plus github for both teams") but not the key names. |
+| `winner_group` on a tie | `null`, and `ties` counts it | Matches their "a drawn series awards it to nobody", but a per-sub-game tie is not spelled out. |
+
+Our own `result_sha256` is recomputed after the block is attached, so our integrity hash still
+covers the whole filed artifact.
 
 **Every change is gated to the reference/interop path — the native dialect stays byte-identical,
 because that is the contract our two published repos and all 238 tests are built on.**

@@ -15,7 +15,13 @@ from pathlib import Path
 from typing import Any
 
 from ..domain import negotiation
-from ..domain.game_ids import make_game_id, new_game_uid
+from ..domain.crypto import REFERENCE
+from ..domain.game_ids import (
+    make_game_id,
+    new_game_uid,
+    reference_game_id,
+    reference_game_uid,
+)
 from ..infra.mcp_server import serve_in_thread, wait_until_up
 from ..shared.config import load_role
 from ..strategy.talk_llm import make_talk_provider
@@ -47,6 +53,7 @@ class PeerRuntime:
         self.num_games = num_games or self.shared.num_games
         self.game_uid = new_game_uid()
         self.game_id = make_game_id(self.peer.group_id or "us", "opponent")
+        self._out_root = out_dir
         self.out_dir = out_dir / f"{role}-{self.game_id}"
         handshake = negotiation.handshake_payload(
             self.shared, self.peer, role=role, game_id=self.game_id,
@@ -109,6 +116,7 @@ class PeerRuntime:
             return False
         theirs = self.deadline.call(link.handshake, self.service.my_handshake)
         self.service.their_handshake = theirs
+        self._adopt_reference_ids(theirs)
         problems = negotiation.check_compatibility(
             self.service.my_handshake, theirs, num_games=self.num_games)
         if problems:
@@ -117,6 +125,33 @@ class PeerRuntime:
             return False
         runtime_reports.write_declaration(self, theirs)
         return True
+
+    def _adopt_reference_ids(self, theirs: dict[str, Any]) -> None:
+        """Re-derive the game ids the way a reference-family peer does.
+
+        Ours are minted in `__init__`, before the opponent's slug is known: the
+        id carries a timestamp and the placeholder "opponent", and the uid is
+        random. Both are fine for a native match, where each side files under its
+        own id - and impossible for a *mutual* signature, whose first key is
+        `game_id`. Theirs are derived from the agreed terms and the two slugs, so
+        both peers reach the same value without exchanging it.
+
+        Safe to rebind here: this runs after the handshake and before the first
+        artifact is written.
+        """
+        if self.peer.interop_dialect != REFERENCE:
+            return
+        from ..infra.interop_codec import interop_terms
+
+        their_gid = (theirs or {}).get("group_id") or "opponent"
+        my_gid = self.peer.group_id or "us"
+        terms = interop_terms(self.shared, num_games=self.num_games)
+        self.game_id = reference_game_id(my_gid, their_gid)
+        self.game_uid = reference_game_uid(terms, my_gid, their_gid)
+        self.out_dir = self._out_root / f"{self.role}-{self.game_id}"
+        self.service.my_handshake["game_id"] = self.game_id
+        self.service.my_handshake["game_uid"] = self.game_uid
+        _log(f"[{self.role}] reference ids adopted: {self.game_id} / {self.game_uid}")
 
     def _await_turn(self) -> bool:
         """Wait for the opponent's move, beating the watchdog in slices.
