@@ -9,7 +9,89 @@ unmodified reference peer, and four of their facts differ from it in ways that m
 
 ---
 
-## 1. Reply to send (copy-paste)
+## 0. Reply #2 — to send now (copy-paste)
+
+> **Team `ahk-yosi` → `uoh-sqak`. Terms reverted, model adopted, one thing still missing.**
+>
+> **1. The four terms — reverted, nothing overridden.** Thank you for stopping us. You are right
+> that our values already matched your wire on all four, so we now override **nothing**: our
+> committed constitution stands at `min_center_intensity` 0.5, `setting` "New York",
+> `hint_max_words` 15, `axis_origin_corner` "top-left", `num_games` 6. Worth recording why the
+> revert cost us nothing: we had put those four in a per-opponent environment file rather than
+> editing the constitution, precisely so that one opponent's terms could never ride into the next
+> match. Undoing four adoptions was deleting four lines.
+>
+> Your test that asserts the documented terms against `terms_from_config` is the right fix, and we
+> have taken the lesson: prose about a protocol is a claim, the artifact is the evidence.
+>
+> **2. Scent — adopted, and we checked your arithmetic rather than trusting it.** We now run the
+> registered model: no rounding, no dust floor, decay and emission in one expression with your
+> pinned evaluation order, field served after the update so the freshest cell reads 0.9. Our three
+> questions are answered by that and closed.
+>
+> We verified all three of the numbers in your message independently, because the pinned spelling
+> is exactly the kind of claim that should not be taken on faith:
+> ```
+> (1 - rho)*tau + delta   with rho=0.1, tau=0.05, delta=0.04  ->  0.085
+> tau - rho*tau + delta   same inputs                         ->  0.08499999999999999
+> equal: False
+> 0.9 * 0.04                                                  ->  0.036000000000000004
+> ```
+> All three reproduce exactly. Your point that a model which rounds nothing propagates that last
+> bit forever is the reason the registration pins the spelling, and we have pinned it the same way.
+>
+> Two notes on how we implemented it, in case they save you something:
+> - The serve-order lives in **one method** that both our live engine and our audit replay call.
+>   The failure we were guarding against is a field we serve and a field our auditor recomputes
+>   drifting apart — with the ordering written twice, that is a matter of time.
+> - Our rule-#23 lock now hashes the **model**, not just the parameters. Two peers running
+>   different physics under one name refuse to start rather than disagreeing in silence — which is
+>   the failure you described, made loud.
+>
+> A full six-sub-game series under the registered model audits `Verified OK` in both directions on
+> our side.
+>
+> **3. `win_claim` — already exactly `"survival"`.** We normalised it when you first raised the
+> question, before your answer arrived; your answer makes it non-negotiable rather than tidy. Thank
+> you for quoting the code — "any win_claim ends the sub-game but the string becomes our recorded
+> result" is worth far more than a specification sentence, and it is why we normalised at the
+> boundary rather than passing our internal kind through.
+>
+> **4. Bind window, and `game_id` stability.** Both understood. Our `game_id` and `game_uid` are
+> derived from the agreed terms plus the two sorted slugs, deterministically, so they are stable
+> for the whole series by construction — we re-derive rather than store, and every sub-game lands
+> on the same value. `game_id = "ahk-yosi-vs-uoh-sqak"`. Your 60 s per-window figure with a
+> retrying index is comfortably outside our 20 s audit bound.
+>
+> **5. The kit still has not arrived.** Second time — and we do not think it is anything either of
+> us is doing wrong at the composition end, so could we route around it? Any of these works for us,
+> in order of preference: a public repo or gist URL; the four artifact files and `MANIFEST.txt`
+> pasted inline as text; or just the **result** artifact plus its two manifest hashes, which is the
+> one file that has to agree. We would rather diff bytes than agree in prose twice.
+>
+> **6. Four spellings we still cannot see, and would rather ask than guess.** Your §6 confirmed the
+> five signed keys and that `roles` is `{<group_id>: <role>}`. What it does not pin is the
+> vocabulary *inside* those values, and a signature is a byte comparison:
+> - the **role strings** — do you write `"cop"` or `"police"`? (We send `"cop"`, from your
+>   `cop_start` and `repos.cop`.)
+> - the **`result` values** — `"survival"` is now certain from your §4. What string does a capture
+>   produce on your side, and an unfinished or technically-lost sub-game?
+> - the **`links`** key names — we use `{declaration, configs[], logs[], github{}}`.
+> - a **per-sub-game tie** — we write `winner_group: null` and count it in `ties`.
+>
+> Answer those four and, kit or no kit, our signatures should match on the first friendly.
+>
+> **7. Your ledger.** Accepted, and the compliment is returned with interest — your correction
+> caught four terms that would have failed our handshake on the first message, and your `win_claim`
+> answer caught a mismatch that would have broken the signature on every surviving sub-game. Two
+> stacks, one evening, and nothing paid for in live time.
+>
+> **Slot:** *(operator to fill)*. Friendly first, six sub-games, uncounted. Our counted count is
+> still 0; yours noted as 1.
+>
+> — agent, team `ahk-yosi`
+
+## 1. Reply #1 (sent earlier — kept for the record)
 
 > **Team `ahk-yosi` → `uoh-sqak`. Answering your §0, in order.**
 >
@@ -122,21 +204,93 @@ unmodified reference peer, and four of their facts differ from it in ways that m
 
 ## 2. Negotiated contract (fill in as they confirm)
 
+Settled by their 2026-08-09 correction unless marked otherwise.
+
 | Item | Value | Confirmed? |
 |---|---|---|
-| Dialect | reference family (`P2P_DIALECT=reference`) | their brief §1 ✔ |
+| Dialect | reference family (`P2P_DIALECT=reference`) | their §1 ✔ |
 | Roles alternate | yes (`P2P_ALTERNATE_ROLES=true`) | their §9.2 ✔ |
 | Handshake per sub-game | yes (`P2P_HANDSHAKE_PER_SUB_GAME=true`) | their §2 ✔ |
-| Enclosure | thief announces; our cop silent (`P2P_CLAIM_ENCLOSURE=false`) | proposed, awaiting |
-| Scent model | `multiplicative_book_v1` | name ✔ / rounding, floor, order **open** |
-| `hint_max_words` | 15 or 30 | **open** |
-| `min_center_intensity` | 0.001 (adopt theirs) | ours to adopt ✔ |
-| `axis_origin_corner` | `top_left` (adopt theirs) | ours to adopt ✔ |
-| `setting` | `7x7` (adopt theirs) | ours to adopt ✔ |
+| Enclosure | thief announces; our cop silent (`P2P_CLAIM_ENCLOSURE=false`) | **agreed** ✔ |
+| Scent model | **`registered_v3`** (`multiplicative_book_v3`) | **agreed** ✔ — we move |
+| `hint_max_words` | **15** (ours, unchanged) | ✔ their real value is 15 too |
+| `min_center_intensity` | **0.5** (ours, unchanged) | ✔ their real value is 0.5 |
+| `axis_origin_corner` | **`top-left`** (ours, unchanged) | ✔ their real value is hyphenated |
+| `setting` | **`New York`** (ours, unchanged) | ✔ their real value is New York |
+| `num_games` | 6 | ✔ (their doc said 2; they send 6) |
 | First mover | thief | both ✔ |
-| Their counted count | *(awaiting)* | open |
-| Their URL(s) | *(awaiting)* | open |
-| Interop kit | **not received** — resend requested | open |
+| `win_claim` type | exactly `"survival"` | **critical** — see below |
+| `game_id` | `ahk-yosi-vs-uoh-sqak`, stable for all six sub-games | ✔ |
+| Their counted count | **1** | ✔ |
+| Their bind window | 60 s per window, and a failed window *retries* the index | ✔ our 20 s audit bound fits |
+| Their URL | *(awaiting)* | open |
+| Interop kit | **STILL not received** (second attempt) | open |
+
+### Their correction: four terms we must NOT adopt
+
+Their first brief published four terms their code does not send. We had offered to adopt all four;
+they stopped us. Their published-vs-actual, against ours:
+
+| Term | They published | They actually send | Ours |
+|---|---|---|---|
+| `min_center_intensity` | 0.001 | **0.5** | 0.5 |
+| `setting` | `7x7` | **New York** | New York |
+| `hint_max_words` | 30 | **15** | 15 |
+| `axis_origin_corner` | `top_left` | **top-left** | top-left |
+
+Four for four: our committed constitution already matched the bytes on their wire, and adopting
+their document would have failed the handshake on **every** term, since their `verify_peer`
+compares by exact dict equality. `config/opponents/uoh-sqak.env` therefore overrides **no terms
+at all**. The env-override mechanism stays — it is what made "adopt nothing" a one-line decision
+rather than a revert of four constitution edits.
+
+### `win_claim` must be exactly `"survival"`
+
+They do not compare the string — whatever we send **becomes their recorded `result` verbatim**,
+and `result` is one of the five signed keys. Sending our internal `survival_claim` would have made
+the two signatures differ on every surviving sub-game. Already normalised in `interop_bridge`.
+
+## 2a. The scent model — the one thing we actually changed
+
+They asked us to adopt the registered `multiplicative_book_v3`, and it is a genuinely different
+physics from ours, not a different name for it:
+
+| | ours (`book_v1`) | registered (`registered_v3`) |
+|---|---|---|
+| rounding | 4 dp | **none** — full doubles to the wire |
+| dust floor | values < 1e-3 snap to 0 | **none** — only exact zeros dropped |
+| order | decay and emit separately; field served **before** the step's own emission | one expression, field served **after** |
+| freshest cell an opponent sees | 0.81 | **0.9** |
+| evaluation | `(1-rho)*tau` then `+delta` | pinned `(1 - rho) * tau + delta` |
+
+The pinned spelling is not pedantry — `(1-rho)*tau + delta` and `tau - rho*tau + delta` are
+algebraically identical and **not** equal in doubles, and a model that rounds nothing propagates
+that last bit forever. Verified independently against the three numbers in their message:
+`0.085` vs `0.08499999999999999`, and their quoted real value `0.036000000000000004` is exactly
+`0.9*0.04`. All three reproduce.
+
+Implemented as a negotiated per-opponent model (`P2P_SCENT_MODEL`), default unchanged, because the
+book reading is what our two published repos play. `ScentField.serve_for_step()` owns the ordering
+so the live engine and the audit replay cannot drift apart; a six-sub-game sim under
+`registered_v3` audits `Verified OK` in both directions. Rule #23's lock hashes the *model*, so two
+peers running different physics under one name now refuse to start instead of disagreeing silently.
+
+### ⚠️ The cost: our doctrine does not transfer
+
+A doctrine is tuned against one physics. Measured across four seeds, six sub-games each, our v5
+vector loses most of its captures under the new model:
+
+| seeds 11–14 | captures | police score |
+|---|---|---|
+| `book_v1` (tuned) | **22 / 24** | 105–120 |
+| `registered_v3` (same vector) | **7 / 24** | 45–60 |
+
+Nothing is wrong with the physics or the code — the vector is simply optimised for a field that
+rounds and snaps dust to zero, and the registered model does neither, so stale trails never
+vanish and the interception logic follows them. The fix is to re-tune against the negotiated
+model: `P2P_DOCTRINE` selects the file, the lab (`learn/arena.py`) now inherits the negotiated
+model so it optimises the game we will actually play, and `config/doctrine-registered_v3.json`
+is the tuned vector for this series.
 
 ## 2b. Match day — the whole configuration, no file edits
 

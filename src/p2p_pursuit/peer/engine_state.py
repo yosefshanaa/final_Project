@@ -100,7 +100,7 @@ class EngineState:
             else self.shared.thief_start
         opp_start = self.shared.thief_start if self.role == POLICE else self.shared.cop_start
         self.belief = BeliefMap.at(self.shared.grid_size, opp_start)
-        self.own_field = ScentField(self.shared.grid_size)
+        self.own_field = ScentField(self.shared.grid_size, model=self.peer.scent_model)
         self.trust = TrustModel()
         self.my_steps = self.opp_steps = 0
         self.barriers_used = 0

@@ -28,7 +28,7 @@ def write_declaration(rt: Any, theirs: dict[str, Any]) -> None:
         game_uid=rt.game_uid, game_id=rt.game_id,
         game_number=rt.service.my_handshake["prior_counted_games"] + 1,
         config_sha256=rt.shared.sha256,
-        scent_model_sha256=negotiation.scent_model_sha256(),
+        scent_model_sha256=negotiation.scent_model_sha256(rt.peer.scent_model),
         token_cap=rt.shared.network.get("token_budget_per_series", 200000),
         me=me, opponent=opp)
     artifacts.write_declaration(rt.out_dir, rt.game_id, decl)

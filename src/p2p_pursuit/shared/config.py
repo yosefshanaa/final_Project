@@ -15,6 +15,7 @@ from pathlib import Path
 from typing import Any
 
 from ..domain.crypto import digest
+from ..domain.scent import BOOK_V1, MODELS
 
 
 @dataclass(frozen=True)
@@ -121,6 +122,12 @@ class PeerConfig:
     #: into role collisions. Measured live 2026-08-01 - see RUNBOOK 3b. So the
     #: claim is a per-opponent negotiation item, exactly like the wire dialect.
     claim_enclosure: bool = True
+    #: Which pheromone physics both sides run: "book_v1" (our reading of book
+    #: ch. 4) or "registered_v3" (the inter-team registration - no rounding, no
+    #: dust floor, decay+emission in one pinned expression, field served after
+    #: the update). A shared model *name* is not a shared physics, so this is
+    #: negotiated per opponent and locked before the first move (rule #23).
+    scent_model: str = BOOK_V1
 
 
 #: *Negotiated* terms an opponent may propose differently per match. A
@@ -210,6 +217,8 @@ EMAIL_RECIPIENT_VAR = "P2P_EMAIL_RECIPIENT"
 #: RUNBOOK 3b says to settle with every team, so they belong in the environment
 #: beside the opponent's URL rather than in a committed file.
 DIALECT_VAR = "P2P_DIALECT"
+#: The pheromone physics itself is negotiable - see `PeerConfig.scent_model`.
+SCENT_MODEL_VAR = "P2P_SCENT_MODEL"
 BOOL_VARS = {
     "P2P_ALTERNATE_ROLES": "alternate_roles",
     "P2P_HANDSHAKE_PER_SUB_GAME": "handshake_per_sub_game",
@@ -239,6 +248,11 @@ def apply_env_overrides(peer: PeerConfig) -> PeerConfig:
     dialect = (os.environ.get(DIALECT_VAR) or "").strip().lower()
     if dialect in ("native", "reference"):
         patch["interop_dialect"] = dialect
+    model = (os.environ.get(SCENT_MODEL_VAR) or "").strip().lower()
+    if model:
+        if model not in MODELS:
+            raise ValueError(f"{SCENT_MODEL_VAR}={model!r} is not one of {MODELS}")
+        patch["scent_model"] = model
     for name, field_name in BOOL_VARS.items():
         raw = (os.environ.get(name) or "").strip().lower()
         if raw in TRUE:

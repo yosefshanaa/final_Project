@@ -18,6 +18,7 @@ from __future__ import annotations
 
 import json
 import logging
+import os
 from dataclasses import asdict, dataclass, replace
 from functools import lru_cache
 from pathlib import Path
@@ -28,6 +29,17 @@ from pathlib import Path
 #: from is which doctrine it plays.
 REPO_ROOT = Path(__file__).resolve().parents[3]
 DEFAULT_PATH = REPO_ROOT / "config" / "doctrine.json"
+#: A doctrine is tuned against one *scent physics*. Negotiating a different model
+#: with an opponent therefore changes which tuned vector is correct, and playing
+#: the wrong one is silent: it does not fail, it just plays worse (measured
+#: 2026-08-09 - the v5 vector loses two thirds of its captures under
+#: `registered_v3`). So the path is deployment-time, beside the model itself.
+DOCTRINE_PATH_VAR = "P2P_DOCTRINE"
+
+
+def default_path() -> Path:
+    override = (os.environ.get(DOCTRINE_PATH_VAR) or "").strip()
+    return Path(override) if override else DEFAULT_PATH
 
 log = logging.getLogger(__name__)
 
@@ -155,13 +167,14 @@ def save(doctrine: Doctrine, path: Path) -> None:
     path.write_text(json.dumps(asdict(doctrine), indent=2) + "\n", encoding="utf-8")
 
 
-@lru_cache(maxsize=1)
-def active(path: Path = DEFAULT_PATH) -> Doctrine:
+@lru_cache(maxsize=4)
+def active(path: Path | None = None) -> Doctrine:
     """The doctrine this process plays: the tuned file if present, else v5.
 
     Announced at load, because "which policy am I actually running" is not
     something a league match should have to infer from how it played.
     """
+    path = path or default_path()
     if not path.exists():
         log.info("doctrine: shipped defaults (no %s)", path)
         return Doctrine()

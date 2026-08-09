@@ -51,14 +51,14 @@ class TurnEngine(EngineState):
         region, intent = self.brain.hint_plan(view, decision)
         hint, tokens = self._make_hint(region)
         self.tokens_used += tokens
-        served = self.own_field.snapshot()
         pos_before = self.own_pos
         self.own_pos = apply_decision(self.board, self.own_pos, decision)
         if decision.barrier is not None:
             self.barriers_used += 1
         self.my_steps += 1
-        self.own_field.emit(self.own_pos)
-        self.own_field.decay()
+        # One call owns both the update and the serve-order, because the two
+        # negotiated models disagree about which comes first.
+        served = self.own_field.serve_for_step(self.own_pos)
         self.history.append(
             {"role": self.role, "step": self.my_steps, "barrier": decision.barrier})
         self.hint_feed.append({"dir": "sent", "step": self.my_steps, "hint": hint,
