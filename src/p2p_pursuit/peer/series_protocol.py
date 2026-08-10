@@ -68,6 +68,16 @@ def _rehandshake(rt: Any, n: int, log_fn: Any) -> bool:
         rt.engine.declare_technical(rt.engine.other, f"no re-handshake: {exc}")
         return False
     rt.service.their_handshake = theirs
+    if theirs.get("agreement_empty"):
+        # Silence, not disagreement: their peer answered our request for this
+        # index with nothing at all - which is what it does when the index is one
+        # it has already settled. Reporting that as a constitution mismatch sends
+        # the next hour looking at game.json.
+        log_fn(f"[{rt.role}] sub-game {n}: opponent returned an EMPTY agreement "
+               f"(no terms, no signature) - it has most likely settled this index "
+               f"already; this is silence, not a terms disagreement")
+        rt.engine.declare_technical(rt.engine.other, "empty agreement for this sub-game")
+        return False
     problems = negotiation.check_compatibility(payload, theirs, num_games=rt.num_games)
     if problems:
         for problem in problems:

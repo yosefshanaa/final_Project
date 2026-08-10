@@ -177,6 +177,11 @@ def handshake_from_agreement(agreement: dict[str, Any], *, mine: dict[str, Any],
         "terms_match": agreement.get("terms") == terms,
         "signature_verified": signed,
         "sub_game_number": agreement.get("sub_game_number"),
+        # Absence is not disagreement. An empty agreement makes every term look
+        # mismatched and the signature look forged, so the caller is told it
+        # received *nothing* rather than being handed 14 false differences and
+        # two misleading refusal messages (measured live, uoh-sqak 2026-08-10).
+        "agreement_empty": not agreement.get("terms") and not agreement.get("signature"),
     }
     if payload["terms_match"] and signed:
         payload["config_sha256"] = mine.get("config_sha256")

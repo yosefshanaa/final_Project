@@ -134,3 +134,24 @@ def test_missing_row_key_is_explicit_null_not_absent() -> None:
     doc = signature_document({"game_id": "a-vs-b", "sub_games": [{"sub_game_number": 1}]})
     assert doc["sub_games"][0] == {"sub_game_number": 1, "roles": None, "result": None,
                                    "winner_group": None, "score": None}
+
+
+def test_an_empty_agreement_reports_absence_not_disagreement() -> None:
+    """Measured live: an empty agreement made all 14 terms look mismatched.
+
+    Absence and disagreement need different remedies - one means "your peer said
+    nothing", the other means "your game.json differs" - so they must not arrive
+    as the same two refusal messages.
+    """
+    from p2p_pursuit.infra.interop_codec import handshake_from_agreement
+
+    terms = {"board_size": 7, "max_steps": 35}
+    empty = handshake_from_agreement({}, mine={"role": "police"}, terms=terms)
+    assert empty["agreement_empty"] is True
+
+    real = handshake_from_agreement(
+        {"terms": terms, "nonce": "ab" * 16,
+         "signature": reference_commit(terms, "ab" * 16)},
+        mine={"role": "police"}, terms=terms)
+    assert real["agreement_empty"] is False
+    assert real["terms_match"] and real["signature_verified"]
