@@ -62,6 +62,18 @@ class Doctrine:
     # -- thief: a weighted score over one-step candidates
     w_mobility: float = 0.5
     w_mobility2: float = 0.25
+    #: Cells we reach strictly before the pursuer does - the room we actually
+    #: own, not the exits we happen to touch. `w_mobility`/`w_mobility2` are
+    #: 1- and 2-ply openness, and both score a pocket as roomy right up to the
+    #: turn its mouth is sealed: measured vs orcai-mj, our thief died at (5,6)
+    #: or (6,6) in nine consecutive sub-games across two doctrines and three
+    #: seeds, always in a pocket whose only exits the pursuer already owned.
+    w_territory: float = 0.15
+    #: Below `trap_floor` owned cells we are in a pocket, and the penalty scales
+    #: with how far below - but only while the pursuer still holds the barrier
+    #: quota to seal it with, since an empty quota cannot close a mouth.
+    trap_floor: int = 10
+    w_trap: float = 1.2
     w_centroid: float = 0.4
     w_risk: float = 3.0
     w_lead_risk: float = 1.5
@@ -110,6 +122,9 @@ SPACE: dict[str, tuple[float, float, bool]] = {
     "claim_threshold": (0.03, 0.50, False),
     "w_mobility": (0.0, 2.0, False),
     "w_mobility2": (0.0, 1.5, False),
+    "w_territory": (0.0, 1.0, False),
+    "trap_floor": (0, 24, True),
+    "w_trap": (0.0, 6.0, False),
     "w_centroid": (0.0, 1.5, False),
     "w_risk": (0.0, 8.0, False),
     "w_lead_risk": (0.0, 5.0, False),
