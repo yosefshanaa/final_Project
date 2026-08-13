@@ -54,6 +54,38 @@ def rehandshake_if_needed(rt: Any, n: int, log_fn: Any) -> bool:
     return _rehandshake(rt, n, log_fn)
 
 
+def _adopt_complementary_role(rt: Any, n: int, theirs: dict[str, Any],
+                              payload: dict[str, Any], log_fn: Any) -> None:
+    """Take the other side of whatever role they declare, instead of colliding.
+
+    Under alternation the role each peer plays is a function of the sub-game
+    index, so once the two indices drift the roles collide on every other
+    sub-game and `check_compatibility` turns each one into a technical loss.
+    That is unrecoverable by construction: nothing in a refused re-handshake
+    ever brings the indices back together. Measured against orcai-mj
+    2026-08-13 - their cop went silent for one sub-game and the *whole* series
+    died 6/6, twice reporting "both peers claim role 'thief'".
+
+    Joining at their index is already how we start a series (`_join_at_their_index`);
+    this is the same principle applied mid-series, and expressed in the only
+    term that has to agree for a sub-game to be playable at all - the roles
+    being complementary. We re-enter the sub-game so the starting cells match
+    the role we just took, exactly as `begin_sub_game` does at a boundary.
+    """
+    if not rt.peer.alternate_roles:
+        return
+    their_role = theirs.get("role")
+    if their_role not in (POLICE, THIEF) or their_role != rt.engine.role:
+        return
+    wanted = THIEF if their_role == POLICE else POLICE
+    log_fn(f"[{rt.role}] sub-game {n}: they also claim {their_role!r}; taking "
+           f"{wanted!r} instead of forfeiting - their index has drifted from ours")
+    rt.engine.set_role(wanted)
+    rt.engine.begin_sub_game(n)
+    rt.service.my_handshake["role"] = wanted
+    payload["role"] = wanted
+
+
 def _rehandshake(rt: Any, n: int, log_fn: Any) -> bool:
     """Exchange a fresh agreement for this sub-game."""
     from ..domain import negotiation
@@ -83,6 +115,7 @@ def _rehandshake(rt: Any, n: int, log_fn: Any) -> bool:
                f"already; this is silence, not a terms disagreement")
         rt.engine.declare_technical(rt.engine.other, "empty agreement for this sub-game")
         return False
+    _adopt_complementary_role(rt, n, theirs, payload, log_fn)
     problems = negotiation.check_compatibility(payload, theirs, num_games=rt.num_games)
     if problems:
         for problem in problems:
