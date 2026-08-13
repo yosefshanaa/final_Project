@@ -117,7 +117,27 @@ class EngineState:
 
     @property
     def my_turn(self) -> bool:
-        return self.end is None and self.next_mover == self.role
+        """Whose move it is, derived from the two step counts - never a flag.
+
+        `next_mover` was a mutable flag written from two threads, and the two
+        writes race: `_send_package` calls `link.reveal` OUTSIDE the lock, so the
+        opponent's own reveal can arrive mid-flight, set the flag to us, and then
+        be overwritten by our `sent_reveal()` setting it back to them. Both peers
+        then wait for a move the other has already made, both 180 s timers run
+        out, and the sub-game dies a technical loss - 0/0, and in a counted match
+        sealed. Measured against orcai-mj 2026-08-13: their timer expired at step
+        31 and so did ours, at identical step counts, twice.
+
+        Counts cannot race like that. `my_steps` rises when we build a step and
+        `opp_steps` when their reveal lands, so with the agreed first mover the
+        owner of the turn is a pure function of both: the first mover is on turn
+        when the counts are level, the second when it is one behind.
+        """
+        if self.end is not None:
+            return False
+        if self.role == self.shared.first_mover:
+            return self.my_steps == self.opp_steps
+        return self.my_steps < self.opp_steps
 
     def _record(self, sealed: dict, commit_hash: str) -> dict:
         self.my_records.append(sealed)
