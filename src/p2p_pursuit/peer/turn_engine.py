@@ -31,10 +31,33 @@ __all__ = ["SubGameEnd", "TurnEngine"]
 
 
 class TurnEngine(EngineState):
+    def _advance(self, *states: str) -> bool:
+        """Move the phase machine unless this sub-game is already over.
+
+        The engine is driven from two places at once - our own series loop and
+        the opponent's inbound pushes - so a turn can still be in flight when a
+        timeout or an inbound event ends the sub-game. Reaching a terminal state
+        first is a *race*, not a logic bug, and the machine's strictness exists
+        to catch illegal play (rules #4-5), not to punish an in-flight turn for
+        arriving after the ending.
+
+        Measured live vs orcai-mj 2026-08-13: `link.reveal` is a network
+        round-trip, an inbound push declared a technical loss during it, and the
+        `sent_reveal` that followed raised `TECHNICAL_LOSS -> VERIFYING` out of
+        the series thread. That killed the whole peer - our endpoint went 502
+        and the opponent, who was retrying correctly, could never reconnect.
+        """
+        if self.end is not None:
+            return False
+        for state in states:
+            self.machine.transition(state)
+        return True
+
     # -- my move ------------------------------------------------------------
     def build_own_step(self) -> dict[str, Any]:
         """Produce this peer's next protocol package (step, or a forced event)."""
-        self.machine.transition(COMPUTING_MOVE)
+        if not self._advance(COMPUTING_MOVE):
+            return {}
         if self.role == THIEF and self.board.is_enclosed(self.own_pos):
             return {"event": self._captured_event("enclosed")}
         # Book 3.4 says an enclosed thief is captured, and it wins games - but
@@ -81,11 +104,11 @@ class TurnEngine(EngineState):
         return package
 
     def sent_commit(self) -> None:
-        self.machine.transition(AWAITING_REVEAL)
+        self._advance(AWAITING_REVEAL)
 
     def sent_reveal(self) -> None:
-        self.machine.transition(VERIFYING)
-        self.machine.transition(WAITING_FOR_OPPONENT)
+        if not self._advance(VERIFYING, WAITING_FOR_OPPONENT):
+            return
         self.next_mover = self.other
 
     def _seal_event(self, record: dict, ending: str, winner: str, cause: str) -> dict:
