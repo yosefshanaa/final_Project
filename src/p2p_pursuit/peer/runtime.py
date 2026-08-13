@@ -120,7 +120,19 @@ class PeerRuntime:
         if not wait_until_up(link):
             _log(f"[{self.role}] opponent never came up at {self.peer.opponent_url}")
             return False
-        theirs = self.deadline.call(link.handshake, self.service.my_handshake)
+        # Reachable is not the same as ready: their tunnel can answer a tool
+        # listing and their peer still be mid-restart when our handshake lands.
+        try:
+            theirs = self.deadline.call_within(
+                link.handshake, self.service.my_handshake,
+                budget_sec=self.peer.handshake_budget_sec,
+                on_retry=lambda err: _log(
+                    f"[{self.role}] handshake failed ({err}); retrying up to "
+                    f"{self.peer.handshake_budget_sec}s"))
+        except DeadlineExpiredError as exc:
+            _log(f"[{self.role}] opponent never completed a handshake within "
+                 f"{self.peer.handshake_budget_sec}s: {exc}")
+            return False
         self.service.their_handshake = theirs
         self._adopt_reference_ids(theirs)
         self._join_at_their_index(theirs)

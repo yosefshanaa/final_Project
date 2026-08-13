@@ -94,6 +94,13 @@ class PeerConfig:
     my_port: int = 8800
     opponent_url: str = ""
     turn_timeout_seconds: int = 180
+    #: Wall-clock patience for the opening handshake and for each per-sub-game
+    #: re-handshake, on top of the short retry burst. An opponent whose peer
+    #: bounces behind a healthy tunnel takes every attempt down with it; these
+    #: turn that from a technical loss into a pause. Peer-local on purpose - the
+    #: constitution is hash-locked, so a knob there would break the handshake.
+    handshake_budget_sec: int = 180
+    rehandshake_budget_sec: int = 90
     strategy: dict[str, str] = field(default_factory=dict)
     trash_talk_provider: str = "template"
     trash_talk_every_n_steps: int = 1
@@ -183,6 +190,8 @@ def load_peer(path: Path) -> PeerConfig:
         my_port=net.get("my_port", 8800),
         opponent_url=net.get("opponent_url", ""),
         turn_timeout_seconds=net.get("turn_timeout_seconds", 180),
+        handshake_budget_sec=net.get("handshake_budget_sec", 180),
+        rehandshake_budget_sec=net.get("rehandshake_budget_sec", 90),
         stateless_http=bool(net.get("stateless_http", True)),
         strategy=dict(raw.get("strategy", {})),
         trash_talk_provider=talk.get("provider", "template"),

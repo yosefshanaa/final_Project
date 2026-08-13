@@ -61,8 +61,13 @@ def _rehandshake(rt: Any, n: int, log_fn: Any) -> bool:
 
     payload = dict(rt.service.my_handshake)
     payload["sub_game"] = n
+    budget = rt.peer.rehandshake_budget_sec
     try:
-        theirs = rt.deadline.call(rt.link.handshake, payload)
+        theirs = rt.deadline.call_within(
+            rt.link.handshake, payload, budget_sec=budget,
+            on_retry=lambda err: log_fn(
+                f"[{rt.role}] sub-game {n}: re-negotiate failed ({err}); "
+                f"retrying up to {budget}s"))
     except DeadlineExpiredError as exc:
         log_fn(f"[{rt.role}] sub-game {n}: opponent never re-negotiated ({exc})")
         rt.engine.declare_technical(rt.engine.other, f"no re-handshake: {exc}")
