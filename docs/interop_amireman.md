@@ -257,6 +257,34 @@ amireman police:  cc26a88a636351bc4fefd050b0aeea055b3f1cc1
 amireman thief:   2118c3d1e05019b359b9403d616fff87d6487c40
 ```
 
+**Updated before DEMO4** (received 2026-08-14, after their interop fixes):
+
+```
+amireman thief:   05f25f183e4e96566ff598744474764b73c18c32   <- new
+amireman police:  cc26a88a636351bc4fefd050b0aeea055b3f1cc1   <- "unchanged"
+```
+
+**What their peer has actually declared on the wire, per sub-game, is ONE commit for
+BOTH roles** - read out of `github_commit` in their own revealed records:
+
+| run | their role on 1/3/5 (thief) | their role on 2/4/6 (police) |
+|---|---|---|
+| DEMO1 | `2118c3d1e050` | *no audit package sent at all* |
+| DEMO2 | `bb0352613990` | `bb0352613990` (g04 no package) |
+
+So `cc26a88a…` has **never appeared on our wire, in either demo**, and in DEMO2 their
+police-role records declared the same commit as their thief-role records. Their
+"police SHA unchanged" is therefore either a publication convention over a single
+runtime, or two processes of which the police one has been declaring the other's
+commit. Ask before DEMO4 - see the reply in §4d.
+
+**We do not validate it in code.** `negotiation.check_compatibility` compares
+`config_sha256` and `scent_model_sha256` and nothing else; their commit is *recorded*
+(declaration, result rows, and their revealed step-0 record) but never compared against
+an expected value. "Use the new SHA for audit validation" is, on our side, a ledger
+entry - not an automated gate. Adding an optional expected-SHA warning is a one-flag
+change if we decide we want it before G011.
+
 Their §3 binds each side's commit inside the `identity` block (`git_commit_hash` ==
 `github_commit`), so these are what their peer should declare on the wire. Worth a glance at the
 first handshake: an identity whose commit does not match what they sent here means one side is
