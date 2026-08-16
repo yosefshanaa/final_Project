@@ -474,12 +474,12 @@ Asia/Jerusalem, UTC+3 in August.
 
 ### Counted league matches — 3 of 10 played
 
-| # | Opponent | Points `ahk-yosi` – them | Winner | League bonus to us | Started (UTC) | Ended (UTC) | Match archive |
-|---:|---|:---:|---|:---:|---|---|---|
-| 1 | [`orcai-mj`](https://github.com/akariya-mohammed/orcai-mj-cop) | 75 – 75 <br>(3 – 3 sub-games) | *tie, no winner* | **+2** <br>*tie score, to each side* | 2026-08-13 20:04:10 | 2026-08-13 20:07:26 ¹ | [`ahk-yosi-vs-orcai-mj-counted/`](matches/ahk-yosi-vs-orcai-mj-counted) |
-| 2 | [`amireman`](https://github.com/AMIR13BD/Game-P2P-Cop-Chase-Police) · label `G012` | **60 – 40** <br>(4 – 2) | **`ahk-yosi`** | **+10** <br>*diversity reward* | 2026-08-14 18:01:29 | 2026-08-14 18:05:30 | [`amireman-g012-counted/`](matches/amireman-g012-counted) |
-| 3 | [`saedshki`](https://github.com/Saed-Abdalgani/Final-project_police_thief_p2p) | **85 – 45** <br>(5 – 1) | **`ahk-yosi`** | **+10** <br>*diversity reward* | 2026-08-16 17:26:28 | 2026-08-16 17:30:45 | [`saedshki-counted/`](matches/saedshki-counted) |
-| | **3 opponents** | **220 – 160** <br>(12 – 6) | **2 wins · 1 tie · 0 losses** | **+22** | | | |
+| # | Opponent | Series points `ahk-yosi` – them | Winner | League bonus | Final points `ahk-yosi` – them | Started (UTC) | Ended (UTC) | Match archive |
+|---:|---|:---:|---|:---:|:---:|---|---|---|
+| 1 | [`orcai-mj`](https://github.com/akariya-mohammed/orcai-mj-cop) | 75 – 75 <br>(3 – 3 sub-games) | *tie, no winner* | **+2** <br>*tie score, to **each** side* | **77 – 77** | 2026-08-13 20:04:10 | 2026-08-13 20:07:26 ¹ | [`ahk-yosi-vs-orcai-mj-counted/`](matches/ahk-yosi-vs-orcai-mj-counted) |
+| 2 | [`amireman`](https://github.com/AMIR13BD/Game-P2P-Cop-Chase-Police) · label `G012` | **60 – 40** <br>(4 – 2) | **`ahk-yosi`** | **+10** to us <br>*diversity reward* | **70 – 40** | 2026-08-14 18:01:29 | 2026-08-14 18:05:30 | [`amireman-g012-counted/`](matches/amireman-g012-counted) |
+| 3 | [`saedshki`](https://github.com/Saed-Abdalgani/Final-project_police_thief_p2p) | **85 – 45** <br>(5 – 1) | **`ahk-yosi`** | **+10** to us <br>*diversity reward* | **95 – 45** | 2026-08-16 17:26:28 | 2026-08-16 17:30:45 | [`saedshki-counted/`](matches/saedshki-counted) |
+| | **3 opponents** | **220 – 160** <br>(12 – 6) | **2 wins · 1 tie · 0 losses** | **+22** to us | **242 – 162** | | | |
 
 *¹ That series predates the timing fix (`da8856a`), so its declaration carries `ended_at: null`;
 the time shown is `generated_at` from the sealed result — the moment the report was signed,
@@ -504,10 +504,16 @@ as `scoring.tie_score` and `network_and_league.diversity_reward`:
   whose thief survived still banks 5), which is why our two decided series were 60–40 and 85–45
   rather than shutouts.
 
-The bonus is league credit and is deliberately *not* summed into the 220–160 above, which is the
-series score the two teams cryptographically agree on. What each result JSON carries instead is
-the boolean the lecturer needs — `diversity_reward_applied`, `true` for us in `G012` and
-`saedshki`, `false` for both sides in the drawn orcai-mj series, since a draw awards it to nobody.
+**Series points vs final points.** The two columns are kept apart on purpose. *Series points* is
+the only figure the two teams compute independently and agree on cryptographically — it is what
+the mutual signature covers and what both filed reports must match. *Final points* is that plus
+the book's bonus, and it is our own tally: the result JSON does not carry a total, it carries the
+boolean the lecturer needs (`diversity_reward_applied` — `true` for us in `G012` and `saedshki`,
+`false` for **both** sides in the drawn orcai-mj series, since a draw awards it to nobody), and
+§9.2.2 says the diversity incentive is *weighted* from the two teams' mutual game-count
+declarations before it enters the league table. So treat the final column as the standing at the
+book's full parameter values — the lecturer's weighting is applied downstream of our report, and
+the book does not publish its formula.
 
 **All 18 counted sub-games audited `Verified OK`** — every gameplay commit re-hashed to the
 record its owner later revealed. The counterpart field `opponent_audit` reads *"not reported
