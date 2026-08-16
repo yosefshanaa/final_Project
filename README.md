@@ -199,9 +199,9 @@ sub-game trust coefficient adapts online by Bayesian update, not by reward.
 
 ## 5. Screenshots
 
-*(Mandatory evidence. The first three were captured live on this codebase — a real two-peer
-match over localhost MCP and the replay/tamper drill; the league terminal shot lands during
-the first counted match.)*
+*(Mandatory evidence, all captured live on this codebase — a real two-peer match over localhost
+MCP, the replay/tamper drill, and the terminal of a counted league match against a real opposing
+team.)*
 
 ### Live GUI — Bayesian belief heatmap (local truth only)
 
@@ -237,11 +237,34 @@ The SHA-256 re-hash mismatches its commit at frame 19 — red `TAMPERED` banner,
 `[TAMPERED]` stamp, and the headless run exits with code 3 (`"verdict": "TAMPERED"`).
 A forged match is void: technical loss 0/0, no appeal (rule #20).
 
-### Pending until the first counted match
+### League match terminal — the counted run, and Gmail's own receipt
 
-| Evidence | File | How it is captured |
+The counted match against `orcai-mj` was archived with its full terminal transcript — captured as
+text rather than as a screenshot, and better for it: every line is greppable, and the artifacts it
+names re-verify offline years after the tunnel is gone.
+
+| Evidence | Where | Value |
 |---|---|---|
-| League match terminal + Gmail send id | `docs/img/league_match_terminal.png` | counted-match run |
+| League match terminal | [`matches/…-orcai-mj-counted/terminal.log`](matches/ahk-yosi-vs-orcai-mj-counted/terminal.log) | 2,073 lines: handshake, all six sub-games, both audits, the filed report |
+| Gmail send id | same file, line 1836 | `19ffcbcac8890b74` — `labelIds: ['SENT']`, `mode: 'send'` |
+
+Its closing lines, verbatim:
+
+```text
+[police] sub-game 6: capture winner=police (barrier onto (6, 5)) audit=Verified OK
+2026-08-13 23:07:29,822 googleapiclient.discovery_cache INFO file_cache is only supported with oauth2client<4.0.0
+[email] {'delivered': True, 'receipt': {'id': '19ffcbcac8890b74', 'threadId': '19ffcbcac8890b74', 'labelIds': ['SENT']}, 'mode': 'send'}
+```
+
+`labelIds: ['SENT']` is Gmail's own acknowledgement, not ours — the reporter cannot forge it, and
+a dry run (the stand-in when Gmail is unreachable) is labelled `dry-run` instead, so the two can
+never be confused. The full result JSON is printed immediately below it in the transcript.
+
+The `G012` and `saedshki` counted runs were not archived this way: `logs/` is git-ignored, so a
+transcript only survives if it is copied into the match directory the way this one was. Their
+evidence is the sealed artifact set under [`matches/`](matches/) instead, which is the stronger
+record anyway — `p2p-pursuit verify --dir` re-checks every commitment in them without a network
+or an opponent (§16).
 
 ## 6. Status
 
