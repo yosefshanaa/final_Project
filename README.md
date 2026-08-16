@@ -277,7 +277,7 @@ or an opponent (§16).
 | 5. Cloud exposure — public-URL config, smoke probe, [`docs/RUNBOOK.md`](docs/RUNBOOK.md), CI chaos drills (latency / dead link / silence) | ✅ incl. live two-tunnel drill + tunnel-kill drill |
 | 6. Crypto — commit-reveal, nonces, mutual audit, step-0 declaration, locks | ✅ |
 | 7. Reporting + GUI — 4 JSON artifacts, Gatekeeper, Gmail (draft/send), live GUI, replay verifier | ✅ |
-| 8. Interop — dialect detection, reference-dialect bridge, cross-dialect audit | ✅ proven vs. the unmodified reference peer |
+| 8. Interop — dialect detection, reference-dialect bridge, cross-dialect audit | ✅ proven vs. the unmodified reference peer **and against three opposing teams' live peers** (§16) |
 | 9. Offline learning — CEM policy search over the doctrine vector, opponent cloning from sealed logs | ✅ frozen into `config/doctrine.json`; never runs during a match |
 
 **Quality gate:** 349 tests, coverage 93% (gate 85%), Ruff clean (E/F/W/I/N/UP/B/C4/SIM),
@@ -322,6 +322,10 @@ uv run p2p-pursuit peer --role police --no-gui   # terminal 2 (port 8802)
 # Verify + view a sealed log (green "Verified OK" / red TAMPERED; exit 3 on tamper):
 uv run p2p-pursuit replay --log results/sim-*/log_*_g01.json --no-gui
 
+# Re-check a whole played match offline - every commitment sent in play must be
+# revealed as the same (payload, nonce), in both directions, per sub-game:
+uv run p2p-pursuit verify --dir matches/amireman-g012-counted/police-G012-20260814T180101
+
 # Probe a (remote) peer: reachability + which wire dialect they speak:
 uv run p2p-pursuit smoke http://127.0.0.1:8801/mcp     # dialect=native|reference|unknown
 
@@ -341,6 +345,19 @@ Flags: `--games N` (dev override; counted matches force 6), `--seed` (reproducib
 (artifact location), `--config-dir DIR` (non-default role directory). Typical league workflow:
 warm-up → negotiate constitution → `peer --counted` → archive artifacts → both teams' reports
 go out automatically ([`docs/RUNBOOK.md`](docs/RUNBOOK.md) is the step-by-step).
+
+**Playing an actual opponent** goes through a per-opponent contract file rather than the flags
+above, so one team's negotiated terms can never ride into the next team's handshake:
+
+```bash
+cp config/opponents/TEMPLATE.env config/opponents/<their-slug>.env   # their answers
+scripts/play.sh <their-slug> https://their-tunnel/mcp --role police  # bash/zsh; play.fish for fish
+```
+
+`scripts/play.sh` resolves the contract, finds a working runner, **refuses an uncounted run whose
+report would reach the lecturer**, and makes a counted run confirm its recipient before starting.
+Send a new team [`docs/INTEROP_GUIDE.md`](docs/INTEROP_GUIDE.md) first — it is the wire contract
+with reproducible golden vectors, and the `.env` above is written from its answers.
 
 ## 9. Configuration guide
 
@@ -370,25 +387,36 @@ full sealed logs (nonces included) and **audit each other** — one mismatch = `
 ```
 src/p2p_pursuit/
   sdk/        PursuitSDK - single business-logic entry point (CLI/GUI go through it)
-  domain/     board, rules, scoring, scent, belief, trust, hints,
-              crypto, protocol, audit, declarations, negotiation, brains_base
+  domain/     board, rules, scoring, scent, belief, trust, hints, crypto, protocol,
+              audit, declarations, negotiation, game_ids (deterministic id + uid),
+              brains_base
   strategy/   police_brain, thief_brain, params (the tunable doctrine vector),
               pathing, squeeze, talk_template, talk_llm
   learn/      OFFLINE ONLY - cem (policy search), arena (points objective),
               population + opponents (sparring archetypes), clone_data + clone_fit
               (fit a real opponent from its sealed logs)
-  peer/       engine_state, turn_engine, service, runtime(+reports), local_match,
-              state_machine, deadline, watchdog, log_manager, audit_bridge
-  infra/      mcp_server, mcp_client, transport, email_sender
-  report/     artifacts (declaration/config/log/result), results
-  gui/        live_view (belief heatmap + banner), replay_view, replay_data, view_model
-  shared/     config (JSON constitution + private TOML), gatekeeper, rate_limiter, sysinfo
+  peer/       engine_state (+ the frozen per-sub-game audit ledger), turn_engine,
+              service, runtime(+reports), series_protocol, unsealed_events,
+              local_match, state_machine, deadline, watchdog, log_manager, audit_bridge
+  infra/      mcp_server, mcp_client, transport, email_sender, dialect (probe),
+              interop_codec + interop_bridge + interop_audit (the reference dialect)
+  report/     artifacts (declaration/config/log/result), results, sim_artifacts,
+              mutual_signature, consensus (end-of-series digest)
+  gui/        live_view (belief heatmap + banner), replay_view, replay_data,
+              view_model, theme
+  shared/     config (JSON constitution + private TOML), env, gatekeeper,
+              rate_limiter, sysinfo, logging_setup, version
 config/police/  config/thief/   # byte-identical game.json + role-private game.toml
 config/doctrine.json            # the frozen tuned doctrine a counted match plays
-config/opponents/               # policies cloned from teams we have already played
-matches/     # tracked per-match artifact archive (configs, logs, results)
+config/opponents/               # per-opponent contracts (TEMPLATE.env + <slug>.env)
+                                # and policies cloned from teams we have played
+scripts/     play.sh / play.fish (launch a match from a contract), sync_repos.py
+             (publish the two submission repos), send_report.py (re-file a result)
+matches/     # tracked per-match artifact archive (configs, logs, results, terminal)
 tests/unit/  tests/integration/ # 287 + 62 tests incl. real MCP round-trip + cheat harness
-docs/        PRD, PRD/1..7, PLAN, TODO, STRATEGY, GAP_ANALYSIS, RUNBOOK, PROMPT_BOOK, COST_ANALYSIS
+docs/        PRD, PRD/1..7, PLAN, TODO, STRATEGY, GAP_ANALYSIS, RUNBOOK, DEPLOY,
+             INTEROP_GUIDE, OPPONENT_BRIEF, interop_<team>, PROMPT_BOOK,
+             COST_ANALYSIS, SUBMISSION_CHECKLIST
 ```
 
 ## 12. Documentation map
@@ -401,11 +429,14 @@ docs/        PRD, PRD/1..7, PLAN, TODO, STRATEGY, GAP_ANALYSIS, RUNBOOK, PROMPT_
 | [`docs/TODO.md`](docs/TODO.md) | Task tracking with milestone gates |
 | [`docs/GAP_ANALYSIS.md`](docs/GAP_ANALYSIS.md) | HW6 vs. final-project spec |
 | [`docs/RUNBOOK.md`](docs/RUNBOOK.md) | Tunnel + league match operations, interop with reference-derived peers, **and the between-match learning loop (§4b)** |
+| [`docs/INTEROP_GUIDE.md`](docs/INTEROP_GUIDE.md) | **Send this to a new team.** The full wire contract — both dialects, the commit formula, canonical JSON, scent physics, the consensus digest — with golden vectors they can reproduce before the first move (pinned by `tests/unit/test_interop_guide_vectors.py`) |
+| [`docs/OPPONENT_BRIEF.md`](docs/OPPONENT_BRIEF.md) | The message to send a new team, the reply we need back, and what we do with their answers |
+| [`docs/interop_amireman.md`](docs/interop_amireman.md) · [`docs/interop_uoh-sqak.md`](docs/interop_uoh-sqak.md) | Per-opponent interop records: their contract, the defects each meeting exposed in ours, and how each was fixed |
 | [`docs/DEPLOY.md`](docs/DEPLOY.md) | Hosting both peers on stable public HTTPS (`Dockerfile`, `$PORT` / `$P2P_OPPONENT_URL`) — and why that beats a tunnel |
 | [`docs/PROMPT_BOOK.md`](docs/PROMPT_BOOK.md) | Prompt-engineering log (guidelines §8.3) |
 | [`docs/COST_ANALYSIS.md`](docs/COST_ANALYSIS.md) | LLM token/cost model per banter provider |
 | [`docs/SUBMISSION_CHECKLIST.md`](docs/SUBMISSION_CHECKLIST.md) | The book's ch. 11.5/11.6 final sweep, mapped to evidence |
-| [`matches/`](matches/) | Per-match archives (artifacts, configs, terminal evidence) |
+| [`matches/`](matches/) | Per-match archives (artifacts, configs, terminal evidence) — indexed with scores, times and bonuses in [§16](#16-match-record) |
 
 ## 13. Interpretation log (academic freedom, book p. 5)
 
