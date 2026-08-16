@@ -26,7 +26,21 @@ BOOK_V1 = "book_v1"
 #: served *after* the update - so the freshest cell reads 0.9. Negotiated per
 #: opponent, because it is a different physics and not merely a different name.
 REGISTERED_V3 = "registered_v3"
-MODELS = (BOOK_V1, REGISTERED_V3)
+#: Team s82kma9e's `copthief-league-protocol` kit model, negotiated 2026-08-17.
+#: Three differences from ours, and all three matter: the falloff is by
+#: **Chebyshev** distance (flat square rings, not a graded radial matrix), decay
+#: is **subtractive** (a flat -0.1, not a 0.9 multiplier), and emission
+#: **max-merges** into the field instead of adding to it. Its freshest cell
+#: therefore reads 0.8 - neither our 0.81 nor the registered model's 0.9.
+SUBTRACTIVE_CHEBYSHEV_V1 = "subtractive_chebyshev_v1"
+MODELS = (BOOK_V1, REGISTERED_V3, SUBTRACTIVE_CHEBYSHEV_V1)
+
+#: Their kernel, by Chebyshev ring: centre, ring 1, ring 2. Flat within a ring,
+#: which is the part that survives our peak-normalised belief update and so
+#: actually changes where we search.
+CHEBYSHEV_RINGS = (0.9, 0.6, 0.3)
+SUBTRACTIVE_DECAY = 0.1
+SUBTRACTIVE_ROUND_DIGITS = 3
 
 # Book figure 4: radial falloff around the emitting agent (offsets -2..2).
 EMISSION_KERNEL: list[list[float]] = [
@@ -41,6 +55,52 @@ EMISSION_KERNEL: list[list[float]] = [
 def scent_model_document(model: str = BOOK_V1) -> dict:
     """The emission+decay model with a numeric example - the pre-series lock payload
     (book rule #23: both teams hash-lock this before the first move)."""
+    if model == SUBTRACTIVE_CHEBYSHEV_V1:
+        # s82kma9e's canonical lock document, adopted byte-for-byte 2026-08-17.
+        # The physics were already ours; the *schema* was not, and a lock only
+        # locks if both sides hash the same object. This one is theirs verbatim -
+        # do not tidy the field names, reorder anything, or "fix" the sparse
+        # example into a matrix. Canonicalised it must hash to
+        #   81ebee59640e80eae8ca9ee5f86abd26e7edf5cdbb27d15925cb6ee45ca6ddf4
+        # which `tests/unit/test_scent_models.py` pins.
+        half = FIELD_SIZE // 2
+        emit_field = {
+            f"{r},{c}": CHEBYSHEV_RINGS[max(abs(r - 3), abs(c - 3))]
+            for r in range(3 - half, 3 + half + 1)
+            for c in range(3 - half, 3 + half + 1)
+        }
+        after_one_decay = {
+            k: round(v - SUBTRACTIVE_DECAY, SUBTRACTIVE_ROUND_DIGITS)
+            for k, v in emit_field.items()
+        }
+        return {
+            "example": {
+                "after_one_decay": after_one_decay,
+                "emit_center": [3, 3],
+                "emit_field": emit_field,
+                "note": "emit at the centre of a 7x7 board, then one decay",
+            },
+            "family": "scent_model",
+            "name": SUBTRACTIVE_CHEBYSHEV_V1,
+            "params": {
+                "cadence": "per_full_turn",
+                "clamp": [0.0, None],
+                "decay": "subtractive",
+                "decay_per_step": SUBTRACTIVE_DECAY,
+                "distance": "chebyshev",
+                "emit_intensity": CENTER_INTENSITY,
+                "falloff": "linear",
+                "falloff_step": "emit_intensity / (field_size // 2 + 1)",
+                "field_size": FIELD_SIZE,
+                "initial_field": "empty",
+                "min_center_intensity": 0.5,
+                "order": "deposit_then_decay",
+                "receiver_side_decay": True,
+                "rounding_decimals": SUBTRACTIVE_ROUND_DIGITS,
+                "transmitted": True,
+                "update": "tau' = round(max(0, tau - decay_per_step), 3)",
+            },
+        }
     if model == REGISTERED_V3:
         return {
             "model": "multiplicative_book_v3",
@@ -106,10 +166,36 @@ class ScentField:
         if self.model == REGISTERED_V3:
             self.advance(center)
             return self.snapshot()
+        if self.model == SUBTRACTIVE_CHEBYSHEV_V1:
+            self.advance_subtractive(center)
+            return self.snapshot()
         served = self.snapshot()
         self.emit(center)
         self.decay()
         return served
+
+    def advance_subtractive(self, center: Cell) -> None:
+        """s82kma9e's kit model: max-merge the ring kernel, then subtract.
+
+        Their stated order, which their two golden fields pin down exactly:
+        emit the kernel at the current cell, merge with ``max(existing,
+        emitted)``, subtract 0.1 from *every* cell, clamp at zero, round to 3dp.
+        Served after the update, so the freshest centre reads 0.8.
+
+        The max-merge is why a revisited cell does not accumulate and why the
+        current cell is always uniquely maximal - which is what keeps our
+        belief argmax pointing at their true position under their physics.
+        """
+        half = FIELD_SIZE // 2
+        for r in range(self.size):
+            for c in range(self.size):
+                dr, dc = abs(r - center[0]), abs(c - center[1])
+                ring = max(dr, dc)
+                emitted = CHEBYSHEV_RINGS[ring] if ring <= half else 0.0
+                merged = max(self.grid[r][c], emitted)
+                self.grid[r][c] = round(
+                    max(0.0, merged - SUBTRACTIVE_DECAY), SUBTRACTIVE_ROUND_DIGITS
+                )
 
     def emit(self, center: Cell) -> None:
         """Deposit the radial kernel around ``center``, clamped to the focal cap."""
