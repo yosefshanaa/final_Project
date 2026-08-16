@@ -49,12 +49,12 @@ with their answers.
 > | 2 | **Do roles alternate between sub-games?** | Either way. The reference repo alternates (natural role on odd sub-games, opposite on even); we default to a fixed role. Say which. |
 > | 3 | **Do you re-negotiate before every sub-game, or handshake once per series?** | Either way — say which. The reference repo re-negotiates each sub-game. |
 > | 4 | **Is a thief with no legal move captured?** (book §3.4 enclosure) | We play it as written — enclosed thief = capture. If your runtime has no enclosure rule, say so and we will switch it off, because otherwise our claim desynchronises the series. |
-> | 5 | **How many counted games have you already played?** (rule #37) | We declare **0** at the time of writing. Both declarations go to the lecturer, so they must be truthful. |
+> | 5 | **How many counted games have you already played?** (rule #37) | We declare **2** (orcai-mj, then amireman/G012). Both declarations go to the lecturer, so they must be truthful. |
 >
 > **4. First mover.** We propose **thief** (the book's default). Fine either way.
 >
-> **5. Endpoints.** Ours will be an ngrok HTTPS URL ending in `/mcp`, sent on match day —
-> free-tier URLs rotate on every tunnel restart. Please send yours the same way. If a tunnel
+> **5. Endpoints.** Ours will be a Cloudflare quick-tunnel HTTPS URL ending in `/mcp`, sent on
+> match day — the URL rotates on every tunnel restart. Please send yours the same way. If a tunnel
 > drops mid-series, restart it, send the new URL and re-handshake; silence past 180 s forfeits
 > that sub-game as a technical loss.
 >
@@ -83,29 +83,52 @@ with their answers.
 ## 3. What we do with it
 
 ```bash
-uv run p2p-pursuit smoke https://their-url/mcp     # prints dialect=native|reference|unknown
+PYTHONPATH=src .venv/bin/p2p-pursuit smoke https://their-url/mcp   # dialect=native|reference|unknown
 ```
 
 The probe classifies their advertised tools, so the wire contract becomes a warm-up fact rather
 than a mid-match surprise. **If the probe disagrees with what they told us, trust the probe** and
 ask again — a wrong dialect means neither side can verify the other's commits at all.
 
-Then set the four negotiated terms as environment variables (no config edit, no rebuild):
+Then write their answers into a contract file — no config edit, no rebuild:
 
-```fish
-set -x P2P_OPPONENT_URL          https://their-url/mcp
-set -x P2P_DIALECT               reference     # or native
-set -x P2P_ALTERNATE_ROLES       true          # their answer to Q2
-set -x P2P_HANDSHAKE_PER_SUB_GAME true         # their answer to Q3
-set -x P2P_CLAIM_ENCLOSURE       false         # their answer to Q4
+```bash
+cp config/opponents/TEMPLATE.env config/opponents/<slug>.env
+$EDITOR config/opponents/<slug>.env      # Q2/Q3/Q4 + dialect; keep P2P_EMAIL_MODE=draft
 ```
 
 Warm-up (uncounted, six sub-games), then the counted match:
 
 ```bash
-uv run p2p-pursuit peer --role thief --games 6
-uv run p2p-pursuit peer --role thief --counted --prior-counted 0
+scripts/play.sh <slug> https://their-url/mcp --role thief --games 6
+# then remove P2P_EMAIL_MODE=draft from the contract file and:
+scripts/play.sh <slug> https://their-url/mcp --role thief --counted --prior-counted 2
 ```
+
+`scripts/play.sh` loads the contract, picks a working runner, refuses an uncounted run that would
+mail the lecturer, and makes a counted run confirm its recipient first. On a machine with `fish`,
+`scripts/play.fish` is the equivalent.
+
+**`--prior-counted` is shared state across both machines.** It is 2 today (orcai-mj, then
+amireman/G012) and rises by one per counted match. Rather than remembering it, read it off the
+archive — whoever plays a counted match commits it to `matches/` immediately, and the next number
+is the count of counted archives there.
+
+**Watch the hash if you agree a term.** `P2P_MAP_AREA`, `P2P_HINT_MAX_WORDS`,
+`P2P_MIN_CENTER_INTENSITY` and `P2P_AXIS_ORIGIN_CORNER` overlay the constitution *before* it is
+hashed (`shared/config.py:206`), so setting any of them changes the `config_sha256` quoted in §1 —
+e.g. `P2P_HINT_MAX_WORDS=12` moves it to `61068a97…`. Re-send the new hash, or the handshake
+refuses on a value we ourselves advertised. Confirm what we will actually present with:
+
+```bash
+PYTHONPATH=src .venv/bin/python -c "from pathlib import Path; \
+from p2p_pursuit.shared.config import load_shared; \
+print(load_shared(Path('config/police/game.json')).sha256)"
+```
+
+Larger changes — board size, start cells, move budget, barrier quota, scoring, sub-game count —
+are not env vars. Give that team a private `config/opponents/<slug>/{police,thief}/` and pass
+`--config-dir`; editing `config/<role>/game.json` would ride into the next team's handshake.
 
 Full operational detail — tunnels, the interop findings behind questions 2–4, scoring, and the
 post-match archive step — is in `RUNBOOK.md` §1–4.
