@@ -6,91 +6,133 @@ order is always: **exchange this brief → warm up uncounted (six sub-games) →
 Section 1 is copy-paste-ready to send. Section 2 is the reply we need. Section 3 is what we do
 with their answers.
 
+Questions 5–8 exist because of the `uoh-sqak` series (2026-08-09/10, `docs/interop_uoh-sqak.md`).
+Each one is a defect that a healthy-looking short warm-up hides and that surfaces only at a
+sub-game boundary or in the final audit — by which time, in a counted match, it is unrecoverable.
+
 ---
 
 ## 1. Message to send them
 
-> **Team `ahk-yosi` — Cops & Robbers P2P match setup**
+> **Team `ahk-yosi` (Yosef Shanaa 213314859, Ahmad Kaiss 325811255) — P2P Cops & Robbers match
+> setup.** Repos: police https://github.com/yosefshanaa/p2p-police-agent, thief
+> https://github.com/yosefshanaa/p2p-thief-agent. We'd like to play you, and to do it in the order
+> that actually works: exchange contracts now, play a **full six-sub-game friendly** (uncounted,
+> nothing filed or emailed), then the counted match — the book allows exactly one counted game per
+> pair and it is sealed the moment both reports are sent, so anything that breaks at a sub-game
+> boundary has to break in the friendly rather than in the real one. Attached is our constitution
+> `game.json` (sha256 `3835f6a137620d8d98ab3925b2d1ed397d2d20d23bb9ba857bcd104284aac443`) — the
+> book's defaults: 7×7, thief (3,3), cop (0,0), top-left origin index 0, 35 moves, 14 barriers,
+> scoring 20/5/5/10/2, τ₀=0.9 ρ=0.10 5×5, 6 sub-games. Our handshake compares that hash by exact
+> equality and refuses to start on any mismatch, so both sides must end up on a byte-identical
+> file; send yours back if you want any value changed and we will adopt it (minimums may only
+> rise). We speak both wire dialects — our own (`handshake` / `receive_commit` / `receive_reveal` /
+> `audit_exchange`, request-response) and the course reference repo's (`negotiate` /
+> `receive_turn` / `submit_audit` / `receive_control`, push-and-inbox) — so nothing needs to change
+> on your side; just tell us which you run, and please send your **repo URL** so we can read your
+> code rather than infer it (in our last setup a team's written brief disagreed with their own
+> implementation on five values, and each one alone would have failed the handshake). What we need
+> back:
 >
-> Members: Yosef Shanaa (213314859), Ahmad Kaiss (325811255).
-> Repos: police https://github.com/yosefshanaa/p2p-police-agent
-> thief https://github.com/yosefshanaa/p2p-thief-agent
+> 1. Your `/mcp` endpoint and your repo URL. Any public tunnel works, but we run counted matches
+>    over a **Cloudflare quick tunnel**: we measured ngrok's free tier dropping the MCP session
+>    mid-sub-game with both peers healthy, where Cloudflare finished with `Verified OK` on both
+>    sides. Free-tier URLs rotate on restart, so resend yours after any restart.
+> 2. Dialect: reference / native / other.
+> 3. Do roles alternate between sub-games? Do you re-negotiate before each sub-game, or handshake
+>    once per series?
+> 4. Enclosure (a thief with no legal move): does your **thief announce** it, does your **cop
+>    claim** it, or is the rule off? Exactly one side may report it, or the series desynchronises.
+> 5. **A commit golden vector** — one `payload`, one `nonce`, and the digest your code produces.
+>    We will reproduce it byte-for-byte before the first move; if the two formulas differ, neither
+>    side can audit the other and we would only discover it in the final audit.
+> 6. Your scent physics as an **expression**, not prose: decay ρ, centre intensity, rounding, dust
+>    floor, and whether a step is served the field **before or after** its own emission. One
+>    number settles it (ours: τ₀=0.9 → 0.81 after one decay, served pre-emission). We are glad to
+>    run yours — we keep a registered alternative and switch per opponent.
+> 7. If your report carries a **mutual signature / shared result digest**: the exact function, its
+>    JSON separators, and a golden vector — plus the exact strings you record for roles, results
+>    and win claims. Whatever we send becomes the value inside your signed report, so a spelling
+>    difference is a failed signature on both sides.
+> 8. **Cold start**: we propose both peers begin at sub-game 1 at an agreed wall-clock time, and
+>    that if indices ever disagree mid-series the peer that is behind **joins** the one ahead
+>    instead of restarting. Two peers that both advance on failure and both insist on their own
+>    index will livelock indefinitely, and it is invisible until it happens.
+> 9. Your prior counted-game count (rule #37) — we declare **3** (orcai-mj, amireman/`G012`,
+>    saedshki). Both declarations reach the lecturer, so they must be truthful.
+> 10. First mover: we propose **thief** (book default), fine either way. Timeout: silence past
+>     180 s forfeits that sub-game as a technical loss.
 >
-> **1. Constitution.** Attached is our `game.json`. The handshake exchanges `config_sha256` and
-> refuses to start on any mismatch, so both sides must load a **byte-identical** file.
-> Ours hashes to:
-> `3835f6a137620d8d98ab3925b2d1ed397d2d20d23bb9ba857bcd104284aac443`
-> It is the book's defaults: 7×7, thief (3,3), cop (0,0), top-left origin index 0, 35 moves,
-> 14 barriers, scoring 20/5/5/10/2, τ₀=0.9 ρ=0.10 5×5, 6 sub-games. If you want any value
-> changed, send yours back and we will adopt it (minimums may only rise) — but we must end up
-> on one identical file.
->
-> **2. Scent model lock** (book rule #23) — ours, for comparison before the first move:
-> ```
-> tau(t+1) = min(0.9, max(0, (1 - rho) * tau(t) + delta_tau))
-> rho = 0.1   center_intensity = 0.9   rounding = 4 digits
-> serving: each step serves the field BEFORE that step's own emission
-> numeric example: tau_0 = 0.9  ->  after one decay = 0.81
-> 5x5 emission kernel, centre 0.9:
->   [0.04, 0.14, 0.20, 0.14, 0.04]
->   [0.14, 0.42, 0.62, 0.42, 0.14]
->   [0.20, 0.62, 0.90, 0.62, 0.20]
->   [0.14, 0.42, 0.62, 0.42, 0.14]
->   [0.04, 0.14, 0.20, 0.14, 0.04]
-> ```
-> We are happy to share our `domain/scent.py` outright — the book encourages it.
->
-> **3. Five questions we need answered before we can play.** These are the ones the book leaves
-> to each pair of teams, and each one alone can void a whole series if we discover it mid-match:
->
-> | # | Question | Our default |
-> |---|---|---|
-> | 1 | **Wire dialect** — which MCP tools does your peer expose? | We speak both: our own four-phase set (`handshake` / `receive_commit` / `receive_reveal` / `audit_exchange`, request-response) **and** the course reference repo's (`negotiate` / `receive_turn` / `submit_audit` / `receive_control`, push-and-inbox). Tell us which you run and we adapt — no change needed on your side. |
-> | 2 | **Do roles alternate between sub-games?** | Either way. The reference repo alternates (natural role on odd sub-games, opposite on even); we default to a fixed role. Say which. |
-> | 3 | **Do you re-negotiate before every sub-game, or handshake once per series?** | Either way — say which. The reference repo re-negotiates each sub-game. |
-> | 4 | **Is a thief with no legal move captured?** (book §3.4 enclosure) | We play it as written — enclosed thief = capture. If your runtime has no enclosure rule, say so and we will switch it off, because otherwise our claim desynchronises the series. |
-> | 5 | **How many counted games have you already played?** (rule #37) | We declare **2** (orcai-mj, then amireman/G012). Both declarations go to the lecturer, so they must be truthful. |
->
-> **4. First mover.** We propose **thief** (the book's default). Fine either way.
->
-> **5. Endpoints.** Ours will be a Cloudflare quick-tunnel HTTPS URL ending in `/mcp`, sent on
-> match day — the URL rotates on every tunnel restart. Please send yours the same way. If a tunnel
-> drops mid-series, restart it, send the new URL and re-handshake; silence past 180 s forfeits
-> that sub-game as a technical loss.
->
-> **6. Plan.** A **full six-sub-game warm-up first** (uncounted, no reports), then the counted
-> match. Warm-ups are explicitly encouraged and cost nothing. We insist on six rather than one
-> or two because three separate series-voiding defects only appear at a sub-game boundary — a
-> short warm-up looks perfectly healthy and then the counted match dies at sub-game 2.
->
-> Both teams email their own report to `rmisegal+uoh26finalgame@gmail.com` at the end; a missing
-> report forfeits that side's points.
+> At the end each team emails its own report to `rmisegal+uoh26finalgame@gmail.com`; a missing
+> report forfeits that side's points. Send us a time for the friendly and a time for the counted
+> match and we will be on the tunnel.
+
+Attach `config/police/game.json` (both roles' files are byte-identical) and add the opponent's
+team name at the top before sending. Send [`INTEROP_GUIDE.md`](INTEROP_GUIDE.md) with it — it
+answers questions 5–7 from our side in full (commit formula, scent expression, mutual signature)
+with golden vectors they can reproduce, so the reply we get back is usually just their numbers
+against ours.
+
+**If they build against [`copthief-league-protocol`](https://github.com/Imreec/copthief-league-protocol),
+questions 5 and 7 are already answered.** We reproduce every CORE vector in that kit, pinned in
+`tests/unit/test_kit_conformance.py`. Skip to the two it deliberately leaves per-pair — **which
+scent model** and **who announces enclosure** — and ask only those. If they run the kit's CORE
+`subtractive_chebyshev_v1`, **accept it**: it is our best measured cell (14.94 pts/sub-game against
+13.19 at home) now that `config/doctrine-subtractive.json` is searched under it. Set both variables
+together, or the gain turns into a ~0.8-point loss that nothing reports.
 
 ---
 
 ## 2. The reply we need (checklist)
 
-- [ ] Their `/mcp` URL
+- [ ] Their `/mcp` URL **and their repo URL** — clone it; read the code, do not wait for
+      attachments. Their prose is documentation and can be stale; their code is the contract.
 - [ ] Dialect: native / reference / something else (we probe it too — see §3)
 - [ ] Roles alternate: yes / no
 - [ ] Re-handshake per sub-game: yes / no
-- [ ] Enclosure claim (§3.4) honoured: yes / no
+- [ ] Enclosure (§3.4): who announces it — their thief / our cop / nobody
+- [ ] **Commit golden vector**: payload + nonce + digest
+- [ ] **Scent physics**: ρ, centre intensity, rounding, dust floor, serve order, one worked number
+- [ ] **Mutual signature** (if any): function, separators, golden vector, and the exact vocabulary
+      for roles / results / win claims
+- [ ] **Cold-start time** and the index tie-break rule
 - [ ] Their prior counted-game count
 - [ ] Their `game.json` (or "we accept yours")
 - [ ] First mover agreed
-- [ ] Warm-up time + counted-match time
+- [ ] Friendly time + counted-match time
 
 ## 3. What we do with it
+
+**a. Probe the wire before believing the prose.**
 
 ```bash
 PYTHONPATH=src .venv/bin/p2p-pursuit smoke https://their-url/mcp   # dialect=native|reference|unknown
 ```
 
 The probe classifies their advertised tools, so the wire contract becomes a warm-up fact rather
-than a mid-match surprise. **If the probe disagrees with what they told us, trust the probe** and
-ask again — a wrong dialect means neither side can verify the other's commits at all.
+than a mid-match surprise. **If the probe disagrees with what they told us, trust the probe** — a
+wrong dialect means neither side can verify the other's commits at all.
 
-Then write their answers into a contract file — no config edit, no rebuild:
+**b. Reproduce their golden vectors before the first move.** A digest that is plausible but wrong
+is indistinguishable from a correct one until a real opponent disagrees, and by then the sub-game
+is already in the log.
+
+```bash
+uv run python -c "
+from p2p_pursuit.domain.crypto import reference_commit
+print(reference_commit({'a': 1}, 'ab' * 16))"   # substitute THEIR payload and nonce
+```
+
+Then pin theirs alongside ours in `tests/unit/test_reference_contract.py`, which already covers
+the three places a wrong value hides: the commitment digest, the deterministic ids
+(`reference_game_id` / `reference_game_uid`), and the mutual signature's *second* JSON encoding —
+that one uses `json.dumps` **default** separators, not the compact ones the commit formula uses.
+Four spellings inside the signed document (roles vocabulary, `result` values, `links` shape,
+per-sub-game tie) are our reading of the reference family's prose; diff them against the new
+opponent's kit before anything counted.
+
+**c. Write their answers into a contract file** — never a constitution edit, which would ride
+into the next team's handshake. No config surgery, no rebuild:
 
 ```bash
 cp config/opponents/TEMPLATE.env config/opponents/<slug>.env
@@ -102,17 +144,29 @@ Warm-up (uncounted, six sub-games), then the counted match:
 ```bash
 scripts/play.sh <slug> https://their-url/mcp --role thief --games 6
 # then remove P2P_EMAIL_MODE=draft from the contract file and:
-scripts/play.sh <slug> https://their-url/mcp --role thief --counted --prior-counted 2
+scripts/play.sh <slug> https://their-url/mcp --role thief --counted --prior-counted 3
 ```
 
 `scripts/play.sh` loads the contract, picks a working runner, refuses an uncounted run that would
 mail the lecturer, and makes a counted run confirm its recipient first. On a machine with `fish`,
 `scripts/play.fish` is the equivalent.
 
-**`--prior-counted` is shared state across both machines.** It is 2 today (orcai-mj, then
-amireman/G012) and rises by one per counted match. Rather than remembering it, read it off the
-archive — whoever plays a counted match commits it to `matches/` immediately, and the next number
-is the count of counted archives there.
+**A doctrine belongs to a physics.** Adopting their scent model without swapping the doctrine
+searched under it loses roughly two thirds of our captures — see `docs/interop_uoh-sqak.md` and
+`docs/STRATEGY.md`. If their physics is one we have not met, run `p2p-pursuit learn` against it
+before the friendly, not after. That is what the contract's `P2P_SCENT_MODEL` / `P2P_DOCTRINE`
+pair is for: they move together or not at all.
+
+**The counted run requires all six sub-games**, so a coordinated cold start (question 8) is a
+precondition, not a nicety — joining at their mid-series index plays fewer than six, and
+`--counted` refuses.
+
+**`--prior-counted` is shared state across both machines.** It is **3** today (orcai-mj,
+amireman/`G012`, saedshki) and rises by one per counted match. Rather than remembering it, read it
+off the archive — whoever plays a counted match commits it to `matches/` immediately, and the next
+number is the count of counted archives there. Two counted matches launching at the same time on
+the two machines cannot each work it out: agree the two values in writing first
+(README [§16](../README.md#16-match-record) keeps the running record).
 
 **Watch the hash if you agree a term.** `P2P_MAP_AREA`, `P2P_HINT_MAX_WORDS`,
 `P2P_MIN_CENTER_INTENSITY` and `P2P_AXIS_ORIGIN_CORNER` overlay the constitution *before* it is
@@ -130,5 +184,5 @@ Larger changes — board size, start cells, move budget, barrier quota, scoring,
 are not env vars. Give that team a private `config/opponents/<slug>/{police,thief}/` and pass
 `--config-dir`; editing `config/<role>/game.json` would ride into the next team's handshake.
 
-Full operational detail — tunnels, the interop findings behind questions 2–4, scoring, and the
+Full operational detail — tunnels, the interop findings behind questions 2–8, scoring, and the
 post-match archive step — is in `RUNBOOK.md` §1–4.
