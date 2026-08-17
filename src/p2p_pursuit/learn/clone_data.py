@@ -75,14 +75,23 @@ def _barriers_of(payload: dict) -> list[Cell]:
 
 
 def _position_of(payload: dict) -> Cell | None:
-    """The mover's own cell, from a field or from the state string.
+    """The mover's own cell, from a field or from the state.
 
-    Three spellings in the wild and no way to know which a peer uses until its
-    log arrives, so all three are tried rather than one being assumed.
+    Four spellings in the wild and no way to know which a peer uses until its
+    log arrives, so all of them are tried rather than one being assumed.
+
+    ``state`` appears in two of those four: as the reference peer's descriptive
+    string (handled by `SELF_IN_STATE`) and as a bare ``[row, col]`` pair, which
+    is gal-roy1's shape. Reading only the string form drops the pair silently -
+    measured 2026-08-17, where every one of gal-roy1's 130 sealed records in a
+    five-sub-game series yielded no
+    position and the clone reported "0 decisions", indistinguishable from a peer
+    that never sent an audit package at all.
     """
-    for key in ("pos_after", "position"):
+    for key in ("pos_after", "position", "state"):
         value = payload.get(key)
-        if isinstance(value, list) and len(value) == 2:
+        if (isinstance(value, list) and len(value) == 2
+                and all(isinstance(v, int) and not isinstance(v, bool) for v in value)):
             return (int(value[0]), int(value[1]))
     found = SELF_IN_STATE.search(str(payload.get("state", "")))
     return (int(found.group(1)), int(found.group(2))) if found else None
