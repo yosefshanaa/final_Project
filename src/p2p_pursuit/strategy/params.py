@@ -75,6 +75,10 @@ class Doctrine:
     #: sub-games of the counted match vs gal-roy1, the gap sat at 2 for 45 of 102
     #: turns, reached 1 exactly 3 times, and produced no capture chance at all.
     w_cut: float = 0.35
+    #: How far below the best a move may score and still be drawn at random -
+    #: the police's half of the mixed policy (see :mod:`.mixing`). In cells of
+    #: BFS distance, because that is the leading term of its move score.
+    police_mix_margin: float = 0.0
     # -- thief: a weighted score over one-step candidates
     w_mobility: float = 0.5
     w_mobility2: float = 0.25
@@ -127,6 +131,12 @@ class Doctrine:
     #: including both losses to gal-roy1, where it stepped to a cell orthogonally
     #: adjacent to a pursuer whose exact cell its own scent feed was carrying.
     w_strike: float = 4.0
+    #: The thief's half of the mixed policy (see :mod:`.mixing`), in units of its
+    #: weighted move score. This is the term that answers "we played the same
+    #: game six times": our evader is a pure function of the view, and replayed
+    #: against one pursuer it produced six identical trajectories, so an opponent
+    #: that beats it once beats it in every remaining sub-game of the match.
+    mix_margin: float = 0.0
 
 
 #: Fields the offline search is NOT allowed to touch, and why.
@@ -173,6 +183,11 @@ SPACE: dict[str, tuple[float, float, bool]] = {
     "pounce_floor": (0.02, 0.60, False),
     "flee_bias": (0.80, 4.00, False),
     "w_cut": (0.0, 2.0, False),
+    # Floors below zero for the same reason as `backtrack_penalty`: 0 is the
+    # "off" value and every default must sit STRICTLY inside its box, so the
+    # search can reach the off state from either side. Anything <= 0 runs the
+    # incumbent selection untouched.
+    "police_mix_margin": (-0.5, 2.0, False),
     "w_mobility": (0.0, 2.0, False),
     "w_mobility2": (0.0, 1.5, False),
     "w_territory": (0.0, 1.0, False),
@@ -195,6 +210,7 @@ SPACE: dict[str, tuple[float, float, bool]] = {
     # evader shadowing a fixed patrol route would want.
     "backtrack_penalty": (-2.0, 5.0, False),
     "w_strike": (0.0, 10.0, False),
+    "mix_margin": (-0.5, 3.0, False),
 }
 
 #: Which half of the vector each role reads. Spelled out rather than derived
@@ -203,7 +219,8 @@ SPACE: dict[str, tuple[float, float, bool]] = {
 #: defaults while reverting them in the thief's file.
 POLICE_KEYS = ("peak_window", "gap_window", "kill_shot_ratio", "seal_ratio",
                "seal_distance", "endgame_reserve", "belief_floor", "police_fresh_min",
-               "claim_threshold", "pounce_floor", "flee_bias", "w_cut")
+               "claim_threshold", "pounce_floor", "flee_bias", "w_cut",
+               "police_mix_margin")
 THIEF_KEYS = tuple(k for k in SPACE if k not in POLICE_KEYS)
 
 

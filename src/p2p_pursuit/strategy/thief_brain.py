@@ -43,6 +43,7 @@ from ..domain.board import Cell, target_of
 from ..domain.brains_base import BrainBase, BrainView
 from ..domain.hints import region_of
 from ..domain.rules import Decision
+from .mixing import choose
 from .params import Doctrine, active
 from .pathing import bfs_distances, scent_centroid
 from .predict import spread, strike_zone
@@ -170,7 +171,7 @@ class ThiefBrain(BrainBase):
         moves = list(view.board.legal_moves(view.own_pos))
         if self._last_move == "STAY":
             moves = [m for m in moves if m != "STAY"] or moves
-        best = max(moves, key=score)
+        best = choose(moves, score, self.p.mix_margin, view.rng, prefer=max)
         self._run_len = self._run_len + 1 if best == self._last_move else 1
         self._last_move = best
         self._prev_cell = view.own_pos
