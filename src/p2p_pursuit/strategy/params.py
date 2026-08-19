@@ -136,7 +136,38 @@ class Doctrine:
     #: game six times": our evader is a pure function of the view, and replayed
     #: against one pursuer it produced six identical trajectories, so an opponent
     #: that beats it once beats it in every remaining sub-game of the match.
+    #:
+    #: DEFAULT 0, on the measurement rather than on principle. Against our own
+    #: police over 40 seeds, survival is 0/40 at margins 0, 0.15, 0.40 and 1.00,
+    #: and mean steps survived FALLS from 15.0 to 14.3 to 12.8. Mixing defeats
+    #: *prediction*, and under `subtractive_chebyshev_v1` no competent opponent
+    #: has to predict us: the field we are required to publish has a unique peak
+    #: on our own cell, so it can simply look. There is nothing for
+    #: unpredictability to buy when the pursuer has your coordinates, and on a
+    #: grid a pursuer with an exact fix catches an evader by construction.
+    #:
+    #: Where it WOULD have a mechanism is a lag-1 physics like `book_v1`, whose
+    #: fix is one step stale and spread over about four cells - and there our
+    #: thief already survives everything, so the gain is unmeasurable from above
+    #: instead of from below. Addressable, off, and honestly labelled.
     mix_margin: float = 0.0
+    #: Weight on how many escape routes survive our NEXT move, not this one.
+    #: `w_strike` refuses a cell the pursuer can take; this refuses a cell whose
+    #: every exit the pursuer can take the turn after. The distinction is the
+    #: whole difference between being chased and being cut off, and it is the
+    #: only way our thief loses in the lab: it survives every archetype in the
+    #: pool and is taken by our own police, which does not chase it - it takes
+    #: the ground away. `w_mobility` counts doors and cannot see this, because
+    #: it counts a door the pursuer is standing behind.
+    #:
+    #: DEFAULT 0, and the measurement says it cannot be otherwise. Swept over
+    #: 0.15/0.3/0.6/1.0/2.0 against 40 seeds: survival against our own police is
+    #: 0% at EVERY weight, and 100% against every other archetype at every
+    #: weight. The term is inert, and the reason is structural rather than a
+    #: missing weight - see `mix_margin`. It stays addressable because the day
+    #: the pool contains a pursuer that cuts *imperfectly* is the day it has
+    #: something to say.
+    w_safe2: float = 0.0
 
 
 #: Fields the offline search is NOT allowed to touch, and why.
@@ -211,6 +242,7 @@ SPACE: dict[str, tuple[float, float, bool]] = {
     "backtrack_penalty": (-2.0, 5.0, False),
     "w_strike": (0.0, 10.0, False),
     "mix_margin": (-0.5, 3.0, False),
+    "w_safe2": (-0.5, 4.0, False),
 }
 
 #: Which half of the vector each role reads. Spelled out rather than derived
