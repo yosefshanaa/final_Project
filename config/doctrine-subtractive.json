@@ -31,7 +31,7 @@
   "chase_bias": 0.73189,
   "w_strike": 8.597411,
   "backtrack_penalty": 3.297227,
-  "mix_margin": -0.349127,
+  "mix_margin": 0.05,
   "w_safe2": 1.010336,
-  "police_mix_margin": 0.0
+  "police_mix_margin": 0.05
 }
