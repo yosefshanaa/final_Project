@@ -201,9 +201,14 @@ def test_re_offering_is_off_by_default_and_on_for_najamjad(monkeypatch, police) 
 
 
 def test_the_friendly_contract_never_mails_the_lecturer() -> None:
-    """Their §7.4 and ours agree: friendlies go to the two teams only."""
+    """Their §7.4 and ours agree: friendlies go to the two teams only.
+
+    This run files to najamjad's own published contact rather than to us - the
+    address on the `Contact:` line of the contract, checked here so a typo in
+    an outbound address cannot reach a stranger unnoticed.
+    """
     env = _env_of("config/opponents/najamjad.env")
-    assert env["P2P_EMAIL_RECIPIENT"] == "apexmediamind@gmail.com"
+    assert env["P2P_EMAIL_RECIPIENT"] == "najikayal4@gmail.com"
     assert "rmisegal" not in env["P2P_EMAIL_RECIPIENT"]
 
 
@@ -346,7 +351,7 @@ def test_the_counted_contract_mails_the_lecturer_and_the_friendly_never_does() -
     counted = _env_of("config/opponents/najamjad-counted.env")
     lecturer = "rmisegal+uoh26finalgame@gmail.com"
 
-    assert friendly["P2P_EMAIL_RECIPIENT"] == "apexmediamind@gmail.com"
+    assert friendly["P2P_EMAIL_RECIPIENT"] == "najikayal4@gmail.com"
     assert counted["P2P_EMAIL_RECIPIENT"] == lecturer
     assert counted["P2P_EMAIL_MODE"] == friendly["P2P_EMAIL_MODE"] == "send"
 
