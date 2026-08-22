@@ -262,11 +262,29 @@ class ReferenceBridge:
             return self.peer_consensus_sha
 
     def _owe(self, envelope: dict) -> None:
-        """Queue an answer their protocol can only carry on our next turn."""
+        """Queue an answer their protocol can only carry on our next turn.
+
+        THIS is the live path for a claim answer, not :meth:`event` - the engine
+        *returns* the sealed answer from `_answer_claim` and `on_receive_turn`
+        hands it here, so nothing routes through the event surface. F002 was lost
+        to exactly that distinction: the same fix was applied to :meth:`event`,
+        proved by a unit test that called :meth:`event` directly, and the wire
+        never touched it. All six thief windows across F001 and F002 came back
+        `audit=no package received`.
+
+        `caught: true` is terminal, so there is no next turn to carry it and it
+        must be flushed now. `timeout` is None because `on_receive_turn` has none
+        to give; `_flush_terminal` treats that as the link default and already
+        suppresses send failures, so a courtesy message can never turn a won
+        sub-game into an error.
+        """
         public = envelope.get("public", {})
         if public.get("kind") == KIND_CAPTURE_ANSWER:
+            caught = bool(public["answer"])
             self._owed_claim_response = {"claim": list(public["claim_cell"]),
-                                         "caught": bool(public["answer"])}
+                                         "caught": caught}
+            if caught:
+                self._flush_terminal(None, hint="You got me.")
 
     def _apply_side_channels(self, parts: dict) -> None:
         """Their unsealed claim answer / win claim, fed to our engine as events.
