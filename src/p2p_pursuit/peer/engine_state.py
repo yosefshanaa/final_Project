@@ -8,7 +8,6 @@ from __future__ import annotations
 
 import random
 from dataclasses import dataclass
-from datetime import UTC, datetime
 from typing import Any
 
 from ..domain import protocol
@@ -21,12 +20,8 @@ from ..domain.scoring import TECHNICAL_LOSS, ScoreTable
 from ..domain.tracking import OpponentTracker
 from ..domain.trust import TrustModel
 from ..shared.config import PeerConfig, SharedConfig
-from .engine_audit import EngineAudit
+from .engine_audit import EngineAudit, _now
 from .state_machine import GamePhaseMachine
-
-
-def _now() -> str:
-    return datetime.now(UTC).isoformat(timespec="seconds")
 
 
 @dataclass

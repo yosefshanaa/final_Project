@@ -45,7 +45,7 @@ def send_step0(rt: Any, log_fn: Any) -> dict[str, Any] | None:
         step0_core,
         step0_declaration,
     )
-    from ..shared.config import hmac_secret
+    from ..shared.config_env import hmac_secret
 
     step0 = getattr(rt.link, "step0", None)
     if not callable(step0):

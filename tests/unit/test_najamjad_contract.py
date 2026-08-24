@@ -243,7 +243,7 @@ def _env_of(path: str) -> dict[str, str]:
 def test_the_env_file_parses_and_sets_nothing_unexpected() -> None:
     """Every key must be one the loader actually reads, or it is a silent no-op
     in a file whose whole purpose is to be believed."""
-    from p2p_pursuit.shared.config import (
+    from p2p_pursuit.shared.config_env import (
         BOOL_VARS,
         DIALECT_VAR,
         EMAIL_MODE_VAR,

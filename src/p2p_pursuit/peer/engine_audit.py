@@ -16,7 +16,10 @@ from ..domain import protocol
 
 
 def _now() -> str:
-    return datetime.now(UTC).isoformat(timespec="seconds").replace("+00:00", "Z")
+    """The single definition. `engine_state` imports it from here rather than
+    keeping a second one - two of these drifted apart once and moved every
+    audit package's `ended_at` from `+00:00` to `Z`."""
+    return datetime.now(UTC).isoformat(timespec="seconds")
 
 class EngineAudit:
     # -- the audit ledger ---------------------------------------------------

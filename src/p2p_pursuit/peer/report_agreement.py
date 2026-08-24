@@ -112,7 +112,7 @@ def exchange_result_agreement(rt: Any, log_fn: Any) -> dict[str, Any]:
     recorded honestly" - and an exception here would discard six played windows.
     """
     from ..report.result_agreement import APPROVAL_KIND, CTX_RESULT, auth_block, contribution
-    from ..shared.config import hmac_secret
+    from ..shared.config_env import hmac_secret
 
     my_gid = rt.peer.group_id or "us"
     their_gid = _their_group_id(rt)
