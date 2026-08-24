@@ -25,7 +25,7 @@ def _err(msg: str) -> None:
 
 
 def cmd_peer(args: argparse.Namespace) -> int:
-    from .shared.config import repo_default_role
+    from .shared.role_marker import repo_default_role
 
     role = args.role or repo_default_role()
     if role is None:
@@ -40,7 +40,7 @@ def cmd_peer(args: argparse.Namespace) -> int:
     # is the one holding the other one. `opponent_url_for` is a no-op unless the
     # URL carries `{role}`, and `series_protocol.take_role` re-targets it at
     # every alternation boundary.
-    from .shared.config import opponent_url_for
+    from .shared.config_env import opponent_url_for
 
     their_role = THIEF if role == POLICE else POLICE
     runtime.attach(sdk.make_link(opponent_url_for(

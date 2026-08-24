@@ -23,7 +23,7 @@ from ..domain.game_ids import (
 from ..infra.mcp_server import serve_in_thread
 from ..shared.config import load_role
 from ..strategy.talk_llm import make_talk_provider
-from . import runtime_reports
+from . import report_agreement, report_consensus, runtime_reports
 from .deadline import DeadlineTracker
 from .runtime_connect import RuntimeConnect
 from .runtime_play import RuntimePlay
@@ -146,13 +146,13 @@ class PeerRuntime(RuntimePlay, RuntimeConnect):
             # timeout, so nothing here can hang unguarded.
             self.watchdog.stop()
             if self.peer.series_consensus:
-                self.series_consensus = runtime_reports.exchange_series_consensus(self, _log)
+                self.series_consensus = report_consensus.exchange_series_consensus(self, _log)
             # After the consensus exchange, because the two are different digests
             # over different scopes and their §5 says so explicitly:
             # `result_sha256` is NOT `series_consensus_sha256` and they are never
             # aliased. This one is what makes their side able to file at all.
             if self.peer.result_agreement:
-                self.result_agreement = runtime_reports.exchange_result_agreement(
+                self.result_agreement = report_agreement.exchange_result_agreement(
                     self, _log)
         finally:
             self.watchdog.stop()

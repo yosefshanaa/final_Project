@@ -20,7 +20,7 @@ from ..domain.game_ids import (
     reference_game_uid,
 )
 from ..infra.mcp_server import wait_until_up
-from . import runtime_reports
+from . import report_consensus, report_step0, runtime_reports
 from .deadline import DeadlineExpiredError
 
 
@@ -66,9 +66,9 @@ class RuntimeConnect:
             # opponent slug lets us derive the agreed pair before any handshake
             # has happened. Without one this is a no-op and Step-0 goes out
             # locally minted - which is the E-PROTO-STALE of 2026-08-24.
-            if runtime_reports.their_group_id_hint():
+            if report_consensus.their_group_id_hint():
                 self._adopt_shared_ids({})
-            runtime_reports.send_step0(self, _log)
+            report_step0.send_step0(self, _log)
         # Reachable is not the same as ready: their tunnel can answer a tool
         # listing and their peer still be mid-restart when our handshake lands.
         try:
@@ -170,7 +170,7 @@ class RuntimeConnect:
         from ..infra.interop_codec import interop_terms
 
         my_gid = self.peer.group_id or "us"
-        from .runtime_reports import their_group_id_hint
+        from .report_consensus import their_group_id_hint
 
         their_gid = (theirs or {}).get("group_id") or their_group_id_hint() or ""
         if not their_gid or their_gid == UNKNOWN_GROUP:

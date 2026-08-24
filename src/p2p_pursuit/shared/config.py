@@ -301,40 +301,9 @@ def load_rate_limits(config_dir: Path, service: str = "gmail") -> dict[str, Any]
     return services.get(service) or services.get("default") or {}
 
 
-def repo_default_role(root: Path = Path()) -> str | None:
-    """Role marker written by the submission split (scripts/sync_repos.py).
-
-    Each published repo carries a one-line ROLE file so `peer` runs with the
-    right role by default; the workspace has none, so --role stays explicit.
-    """
-    path = root / "ROLE"
-    if not path.exists():
-        return None
-    role = path.read_text(encoding="utf-8").strip()
-    return role if role in ("police", "thief") else None
 
 
-# The P2P_* overlay lives in `.config_env`; re-exported because callers import
-# these from here. __all__ is what keeps the re-exports alive - without it the
-# linter prunes them as unused and every importer breaks at run time.
-from .config_env import (  # noqa: E402
-    HMAC_KEY_ID_VAR,
-    HMAC_SECRET_VAR,
-    OPPONENT_DOOR_VARS,
-    OPPONENT_URL_VAR,
-    ROLE_PLACEHOLDER,
-    WIRE_ROLE_NAMES,
-    _shared_env_overrides,
-    apply_env_overrides,
-    hmac_fingerprint,
-    hmac_secret,
-    opponent_url_for,
-)
-
-__all__ = [
-    "HMAC_KEY_ID_VAR", "HMAC_SECRET_VAR", "OPPONENT_DOOR_VARS",
-    "OPPONENT_URL_VAR", "ROLE_PLACEHOLDER", "WIRE_ROLE_NAMES", "PeerConfig",
-    "SharedConfig", "apply_env_overrides", "hmac_fingerprint", "hmac_secret",
-    "load_peer", "load_rate_limits", "load_role", "load_shared",
-    "opponent_url_for", "repo_default_role",
-]
+# The two pieces of the P2P_* overlay this module applies itself at load time.
+# Everything else in `.config_env` is imported directly by whoever needs it,
+# rather than re-exported here - a façade would cost this file the size rule.
+from .config_env import _shared_env_overrides, apply_env_overrides  # noqa: E402
