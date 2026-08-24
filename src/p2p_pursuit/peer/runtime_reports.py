@@ -596,7 +596,15 @@ def send_step0(rt: Any, log_fn: Any) -> dict[str, Any] | None:
         llm_model=rt.peer.llm_model, code_version=CODE_VERSION,
         commit=sysinfo.git_commit(), spec=sysinfo.collect())
     budget = rt.shared.network.get("token_budget_per_series", 200000)
-    start = datetime.now(UTC).strftime("%Y-%m-%dT%H:%M:%SZ")
+    # The agreed constant, not a stamp. Their runtime compares game_start by
+    # exact equality against the value in their launch document, so a clock
+    # reading can never match it - E-CONFIG-MISMATCH, 2026-08-24. It is one of
+    # the 19 members of the Step-0 core, so setting it re-signs the core: the
+    # HMAC is computed below, after this value is in. Not a deadline - the
+    # agreed instant may already have passed and that changes nothing; what
+    # matters is that both declarations carry the same constant.
+    start = ((os.environ.get("P2P_GAME_START") or "").strip()
+             or datetime.now(UTC).strftime("%Y-%m-%dT%H:%M:%SZ"))
     declaration = {
         "game_id": rt.game_id, "game_uid": rt.game_uid,
         "teams": {slot: subtree}, "times": {"game_start": start},
